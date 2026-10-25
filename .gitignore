@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+_site/
+.jupyterlite.doit.db
+raw/
+*_scored.csv
+*_checked.csv

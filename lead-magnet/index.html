@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Train your first AI in 10 minutes · Akada Labs</title>
+<meta name="description" content="Train a working image classifier in your browser in 10 minutes. No code, no expensive laptop.">
+<meta property="og:title" content="Train your first AI in 10 minutes">
+<meta property="og:description" content="No code. No expensive laptop. Just your browser and a webcam or phone camera.">
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --text: #1c1b19;
+    --muted: #5d5a54;
+    --line: #e6e2da;
+    --accent: #0b7a4b;
+    --accent-text: #ffffff;
+    --accent-soft: #e5f3ec;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141513;
+      --surface: #1d1f1c;
+      --text: #ecebe6;
+      --muted: #a7a59e;
+      --line: #30332e;
+      --accent: #3ccf8e;
+      --accent-text: #0b1a12;
+      --accent-soft: #1b2e24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+  .brand { font-weight: 700; letter-spacing: .02em; color: var(--accent); font-size: 15px; }
+  h1 { font-size: clamp(30px, 7vw, 44px); line-height: 1.1; margin: 12px 0 12px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; }
+  p { margin: 0 0 14px; }
+  .lede { font-size: 19px; color: var(--muted); }
+  a { color: var(--accent); }
+  .button {
+    display: inline-block; background: var(--accent); color: var(--accent-text);
+    padding: 14px 22px; border-radius: 999px; font-weight: 700; text-decoration: none;
+  }
+  .button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .demo video, .demo img { width: 100%; border-radius: 10px; display: block; }
+  ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: grid; gap: 12px; }
+  ol.steps > li { counter-increment: step; position: relative; padding: 16px 16px 16px 60px; }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 16px; top: 16px; width: 30px; height: 30px;
+    border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700;
+    display: grid; place-items: center; font-size: 15px;
+  }
+  ol.steps strong { display: block; }
+  .tip { font-size: 15px; color: var(--muted); margin-top: 6px; }
+  .ideas { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .ideas li { background: var(--accent-soft); color: var(--text); border-radius: 999px; padding: 4px 12px; font-size: 15px; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .share { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .share a { border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; text-decoration: none; font-weight: 600; }
+  .cta { background: var(--accent-soft); border: 0; margin-top: 48px; }
+  .cta h2 { margin-top: 0; }
+  footer { margin-top: 48px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">AKADA LABS</div>
+  <h1>Train your first AI in 10 minutes</h1>
+  <p class="lede">You'll teach a computer to recognise things through your camera, in your browser. No code, no sign-up, no expensive laptop.</p>
+
+  <section class="demo" id="demo" hidden>
+    <h2>Watch it once (90 seconds)</h2>
+    <div class="card" id="demo-media"></div>
+  </section>
+
+  <h2>Your 10 minutes</h2>
+  <ol class="steps">
+    <li class="card">
+      <strong>Open Teachable Machine in a new tab</strong>
+      It's a free Google tool. Choose <em>Image Project</em>, then <em>Standard image model</em>.
+      <p style="margin:12px 0 0"><a class="button" href="https://teachablemachine.withgoogle.com/train/image" target="_blank" rel="noopener">Open Teachable Machine</a></p>
+    </li>
+    <li class="card">
+      <strong>Make 2 classes</strong>
+      Rename "Class 1" and "Class 2" to two things you can show the camera. Some ideas:
+      <ul class="ideas"><li>Naira note / Not money</li><li>Ripe plantain / Unripe plantain</li><li>Thumbs up / Thumbs down</li><li>Pen / Phone</li></ul>
+    </li>
+    <li class="card">
+      <strong>Give it about 30 photos of each</strong>
+      Click <em>Webcam</em> and hold the button to snap photos. Move the object around: closer, further, different angles.
+      <div class="tip">On a phone, or no webcam? Click <em>Upload</em> instead and pick photos from your gallery.</div>
+    </li>
+    <li class="card">
+      <strong>Click Train model</strong>
+      Keep the tab open while it trains. It takes under a minute.
+    </li>
+    <li class="card">
+      <strong>Test it live</strong>
+      Show it each object in the <em>Preview</em> panel and watch the bars move. Then try to fool it: show it something new.
+    </li>
+    <li class="card">
+      <strong>Come back here</strong>
+      Read what just happened, then show the world what you built.
+    </li>
+  </ol>
+
+  <h2>What just happened</h2>
+  <p><strong>You gave it examples.</strong> You didn't write any rules like "plantain is yellow". You showed it photos with the right answer attached. That's the core of machine learning: a computer learns from examples, not instructions.</p>
+  <p><strong>It found patterns.</strong> During training, the model looked for what makes your class 1 photos different from your class 2 photos: colours, shapes, edges. It started from a model already trained on millions of photos, which is why 30 of yours were enough.</p>
+  <p><strong>It made predictions, and sometimes got them wrong.</strong> When you showed it something new, it guessed which class looked most similar. It can be fooled by a messy background, poor light, or anything it never saw in training. Real AI fails the same way, which is why the data you train it on matters so much.</p>
+
+  <h2>Show us what you built</h2>
+  <p>Post a screenshot or short clip of your model working, and tag <strong class="handle">@akadalabs</strong>. Tell us what you taught it.</p>
+  <div class="share" id="share"></div>
+
+  <section class="card cta">
+    <h2>That took 10 minutes.</h2>
+    <p>In 12 weeks you'll build and deploy an AI tool that solves a real Nigerian problem, with nothing installed. <strong>40 places, free.</strong> <span id="close-line"></span></p>
+    <p><a class="button" id="cta-button" href="#">Join the waitlist</a></p>
+    <details>
+      <summary>Who is it for?</summary>
+      <p>Anyone 18 or older in Nigeria who is curious about AI, including people who have never coded. You need about 4 hours a week and a laptop if you can get one (a shared laptop or a cyber café works too). Live sessions are on Saturday mornings.</p>
+    </details>
+  </section>
+
+  <footer>Akada Labs teaches practical AI to Nigerians, for free. "Akada" is what we call someone who loves to learn.</footer>
+</main>
+
+<script>
+  // ---- Edit these before launch ----
+  const CONFIG = {
+    // Before January: a waitlist form (e.g. a Google Form). After: the application form.
+    waitlistUrl: "",
+    applicationUrl: "",
+    applicationsOpen: false,
+    closeDate: "",            // e.g. "31 January 2027"
+    handle: "@akadalabs",     // confirm the handle is yours first
+    demoVideo: "",            // e.g. "demo.mp4" or "demo.gif", placed next to this file
+    pageUrl: location.href.split("#")[0],
+  };
+  // -----------------------------------
+
+  const button = document.getElementById("cta-button");
+  if (CONFIG.applicationsOpen && CONFIG.applicationUrl) {
+    button.textContent = "Apply now";
+    button.href = CONFIG.applicationUrl;
+  } else if (CONFIG.waitlistUrl) {
+    button.href = CONFIG.waitlistUrl;
+  } else {
+    button.removeAttribute("href");
+    button.setAttribute("aria-disabled", "true");
+    button.textContent = "Waitlist opens soon";
+  }
+  if (CONFIG.applicationsOpen && CONFIG.closeDate) {
+    document.getElementById("close-line").textContent = `Applications close on ${CONFIG.closeDate}.`;
+  }
+  document.querySelectorAll(".handle").forEach(el => el.textContent = CONFIG.handle);
+
+  if (CONFIG.demoVideo) {
+    const media = document.getElementById("demo-media");
+    if (/\.gif$/i.test(CONFIG.demoVideo)) {
+      media.innerHTML = `<img src="${CONFIG.demoVideo}" alt="Screen recording: making two classes, training, and testing in Teachable Machine">`;
+    } else {
+      media.innerHTML = `<video src="${CONFIG.demoVideo}" controls playsinline preload="metadata"></video>`;
+    }
+    document.getElementById("demo").hidden = false;
+  }
+
+  const text = `I just trained my first AI in 10 minutes, in my browser. ${CONFIG.handle}`;
+  const url = encodeURIComponent(CONFIG.pageUrl);
+  const msg = encodeURIComponent(text);
+  const links = [
+    ["X", `https://x.com/intent/post?text=${msg}&url=${url}`],
+    ["LinkedIn", `https://www.linkedin.com/sharing/share-offsite/?url=${url}`],
+    ["WhatsApp", `https://wa.me/?text=${msg}%20${url}`],
+  ];
+  document.getElementById("share").innerHTML = links
+    .map(([name, href]) => `<a href="${href}" target="_blank" rel="noopener">Share on ${name}</a>`).join("");
+</script>
+</body>
+</html>
