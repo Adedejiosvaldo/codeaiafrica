@@ -26,11 +26,11 @@ export default function Overview() {
         <StatCard label="Applications" value={a.total} icon={<ClipboardCheck className="h-[18px] w-[18px]" />}
           sub={`${a.eligible} eligible · ${a.never_coded} never coded`} />
         <StatCard label="Need a problem score" value={a.unscored} tone="sun" icon={<Hourglass className="h-[18px] w-[18px]" />}
-          sub={a.unscored ? <Link to="/admin/applications?filter=unscored" className="font-semibold text-brand-700 hover:underline">Review them →</Link> : "All caught up"} />
+          sub={a.unscored ? <Link to="/admin/applications?filter=unscored" className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline">Review them <ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link> : "All caught up"} />
         <StatCard label="Learners" value={<>{data.learners.total}<span className="text-xl text-ink-faint">/{data.cap}</span></>}
           tone="ink" icon={<GraduationCap className="h-[18px] w-[18px]" />} sub="places filled" />
         <StatCard label="Waitlist sign-ups" value={data.waitlist} tone="clay" icon={<UserPlus className="h-[18px] w-[18px]" />}
-          sub={<Link to="/admin/waitlist" className="font-semibold text-brand-700 hover:underline">See the list →</Link>} />
+          sub={<Link to="/admin/waitlist" className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline">See the list <ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link>} />
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.6fr_1fr]">
@@ -91,7 +91,7 @@ export default function Overview() {
             {data.quiz.confidence_labels.map((l, i) => (
               <li key={l} className="flex items-center justify-between gap-3">
                 <span className="truncate">{l}</span>
-                <span className="shrink-0 tabular-nums text-ink-soft">{pre.confidence[i] ?? "—"} → <b className="text-ink">{post.confidence[i] ?? "—"}</b></span>
+                <span className="shrink-0 tabular-nums text-ink-soft">{pre.confidence[i] ?? "—"} <ArrowRight className="inline h-3 w-3 align-[-1px]" aria-label="to" /> <b className="text-ink">{post.confidence[i] ?? "—"}</b></span>
               </li>
             ))}
           </ul>

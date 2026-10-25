@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Copy, Download, GraduationCap, RefreshCw, Search } from "lucide-react";
+import { ArrowRight, Check, Copy, Download, GraduationCap, RefreshCw, Search } from "lucide-react";
 import { PageHeader } from "../../components/AdminLayout";
 import { AButton, Badge, Card, EmptyState, ErrorState, PageLoader, TextInput, cx, useToast } from "../../components/ui";
 import { ApiError, api } from "../../lib/api";
@@ -92,7 +92,7 @@ export default function Learners() {
                         <Badge tone={ok ? "brand" : "neutral"}>{l.labs_done}/{l.labs_required}</Badge>
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-center text-sm tabular-nums text-ink-soft">
-                        {l.pre_score ?? "–"} → <b className="text-ink">{l.post_score ?? "–"}</b>
+                        {l.pre_score ?? "–"} <ArrowRight className="inline h-3 w-3 align-[-1px]" aria-label="to" /> <b className="text-ink">{l.post_score ?? "–"}</b>
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-1">

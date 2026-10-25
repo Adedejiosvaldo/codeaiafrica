@@ -1,6 +1,5 @@
 ---
 title: My Akada Labs capstone
-emoji: 🇳🇬
 colorFrom: green
 colorTo: gray
 sdk: gradio
