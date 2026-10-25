@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Camera, Check, ExternalLink, Lightbulb, Share2, Smartphone } from "lucide-react";
 import { usePublicConfig } from "../../components/PublicLayout";
-import { AButton, Card, LinkButton, cx } from "../../components/ui";
+import { AButton, Card, LinkButton, PRESS, cx } from "../../components/ui";
 
 const TM_URL = "https://teachablemachine.withgoogle.com/train/image";
 const HANDLE = "@akadalabs";
@@ -42,7 +42,7 @@ export default function Try() {
 
       <div className="mt-10 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3">
         <div className="h-2 flex-1 rounded-full bg-line">
-          <div className="h-2 rounded-full bg-brand-500 transition-all duration-500" style={{ width: `${(done.length / STEPS.length) * 100}%` }} />
+          <div className="h-2 rounded-full bg-brand-500 motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out" style={{ width: `${(done.length / STEPS.length) * 100}%` }} />
         </div>
         <span className="text-sm font-semibold text-ink-soft">{done.length} of {STEPS.length}</span>
       </div>
@@ -52,11 +52,11 @@ export default function Try() {
           const isDone = done.includes(i);
           return (
             <li key={s.title}>
-              <Card className={cx("flex gap-4 p-5 transition-colors", isDone && "border-brand-200 bg-brand-50/50")}>
+              <Card className={cx("flex gap-4 p-5 transition-[border-color,background-color] duration-150 ease-out", isDone && "border-brand-200 bg-brand-50/50")}>
                 <button onClick={() => toggle(i)} aria-pressed={isDone} aria-label={isDone ? `Mark step ${i + 1} not done` : `Mark step ${i + 1} done`}
-                  className={cx("grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 font-bold transition-colors",
+                  className={cx("grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 font-bold transition-[border-color,background-color,color,scale] duration-150 ease-out", PRESS,
                     isDone ? "border-brand-600 bg-brand-600 text-white" : "border-line-strong text-ink-soft hover:border-brand-500")}>
-                  {isDone ? <Check className="h-4 w-4" strokeWidth={3} /> : i + 1}
+                  {isDone ? <Check className="h-4 w-4" aria-hidden /> : i + 1}
                 </button>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-lg font-bold">{s.title}</h2>

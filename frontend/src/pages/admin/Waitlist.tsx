@@ -1,6 +1,6 @@
 import { Download, Trash2, UserPlus } from "lucide-react";
 import { PageHeader } from "../../components/AdminLayout";
-import { AButton, Card, EmptyState, ErrorState, PageLoader, useToast } from "../../components/ui";
+import { AButton, Card, cx, EmptyState, ErrorState, PageLoader, PRESS, useToast } from "../../components/ui";
 import { api } from "../../lib/api";
 import { formatDate } from "../../lib/labels";
 import { useApi } from "../../lib/useApi";
@@ -36,7 +36,7 @@ export default function Waitlist() {
                   <p className="truncate font-medium">{e.email}</p>
                   <p className="text-sm text-ink-soft">{e.name || "No name"} · joined {formatDate(e.created_at)}</p>
                 </div>
-                <button onClick={() => remove(e)} className="grid h-9 w-9 place-items-center rounded-full text-ink-faint hover:bg-clay-50 hover:text-clay-700" aria-label={`Remove ${e.email}`}>
+                <button onClick={() => remove(e)} className={cx("grid h-9 w-9 place-items-center rounded-full text-ink-faint hover:bg-clay-50 hover:text-clay-700 transition-[background-color,color,scale] duration-150 ease-out", PRESS)} aria-label={`Remove ${e.email}`}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </li>

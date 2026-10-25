@@ -49,9 +49,18 @@
     display: inline-block; background: var(--accent); color: var(--accent-text);
     padding: 14px 22px; border-radius: 999px; font-weight: 700; text-decoration: none;
   }
+  a, button { -webkit-tap-highlight-color: transparent; }
+  @media (prefers-reduced-motion: no-preference) {
+    .button, .share a { transition-property: scale; transition-duration: 150ms; transition-timing-function: ease-out; }
+    .button:not([aria-disabled="true"]):active, .share a:active { scale: 0.96; }
+  }
   .button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
-  .demo video, .demo img { width: 100%; border-radius: 10px; display: block; }
+  .demo video, .demo img { width: 100%; border-radius: 10px; display: block;
+    outline: 1px solid oklch(0 0 0 / 0.1); outline-offset: -1px; }
+  @media (prefers-color-scheme: dark) {
+    .demo video, .demo img { outline-color: oklch(1 0 0 / 0.1); }
+  }
   ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: grid; gap: 12px; }
   ol.steps > li { counter-increment: step; position: relative; padding: 16px 16px 16px 60px; }
   ol.steps > li::before {

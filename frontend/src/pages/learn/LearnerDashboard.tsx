@@ -10,7 +10,7 @@ import { formatDate } from "../../lib/labels";
 import { labLink } from "../../lib/links";
 import type { LearnerDashboard as Data, LearnerWeek } from "../../lib/types";
 import { useApi } from "../../lib/useApi";
-import { AButton, Badge, Button, Card, ErrorState, LinkButton, Logo, PageLoader, ProgressRing, TextInput, cx, useToast } from "../../components/ui";
+import { AButton, Badge, Button, Card, Collapse, ErrorState, LinkButton, Logo, PageLoader, ProgressRing, TextInput, cx, useToast } from "../../components/ui";
 
 export default function LearnerDashboard() {
   const { token = "" } = useParams();
@@ -160,11 +160,11 @@ function WeekRow({ week, token, open, onToggle, onDone }:
   }
 
   return (
-    <Card id={`week-${week.week}`} className={cx("overflow-hidden transition-shadow", open && "shadow-lift")}>
+    <Card id={`week-${week.week}`} className={cx("overflow-hidden transition-[box-shadow] duration-150 ease-out", open && "shadow-lift")}>
       <button onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-4 px-4 py-4 text-left sm:px-5">
         <span className={cx("grid h-10 w-10 shrink-0 place-items-center rounded-full font-display text-[15px] font-bold",
           week.done ? "bg-brand-600 text-white" : "bg-paper text-ink-soft ring-1 ring-line")}>
-          {week.done ? <Check className="h-5 w-5" strokeWidth={3} aria-label="Done" /> : week.week}
+          {week.done ? <Check className="h-5 w-5" aria-label="Done" /> : week.week}
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Week {week.week} · {week.where}</p>
@@ -173,10 +173,10 @@ function WeekRow({ week, token, open, onToggle, onDone }:
         <span className="hidden shrink-0 sm:block">
           {week.done ? <Badge tone="brand">Submitted {formatDate(week.submitted_at)}</Badge> : <Badge>To do</Badge>}
         </span>
-        <ChevronDown className={cx("h-5 w-5 shrink-0 text-ink-faint transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cx("h-5 w-5 shrink-0 text-ink-faint motion-safe:transition-[rotate] motion-safe:duration-150 motion-safe:ease-out", open && "rotate-180")} aria-hidden />
       </button>
-      {open && (
-        <div className="animate-fade border-t border-line bg-paper/60 px-4 py-5 sm:px-5 sm:pl-[76px]">
+      <Collapse open={open}>
+        <div className="border-t border-line bg-paper/60 px-4 py-5 sm:px-5 sm:pl-[76px]">
           <p className="text-ink-soft">{week.summary}</p>
           {link && (
             <AButton href={link.href} target={link.href.startsWith("/try") ? undefined : "_blank"} rel="noopener"
@@ -216,7 +216,7 @@ function WeekRow({ week, token, open, onToggle, onDone }:
             <p className="mt-4 flex gap-2 text-sm text-ink-soft"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden /> 3 minutes to show your tool live, then 1 minute of questions.</p>
           )}
         </div>
-      )}
+      </Collapse>
     </Card>
   );
 }

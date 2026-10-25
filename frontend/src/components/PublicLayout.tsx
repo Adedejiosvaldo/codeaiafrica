@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useOutletContext } from "react-rout
 import { Menu, X } from "lucide-react";
 import { useApi } from "../lib/useApi";
 import type { PublicConfig } from "../lib/types";
-import { LinkButton, Logo, cx } from "./ui";
+import { cx, LinkButton, Logo, PRESS } from "./ui";
 
 export function usePublicConfig() {
   return useOutletContext<PublicConfig | null>();
@@ -43,7 +43,7 @@ export default function PublicLayout() {
             ))}
             <LinkButton to={cta.to} size="md" className="ml-2">{cta.label}</LinkButton>
           </nav>
-          <button className="grid h-10 w-10 place-items-center rounded-full hover:bg-ink/5 md:hidden"
+          <button className={cx("grid h-10 w-10 place-items-center rounded-full hover:bg-ink/5 md:hidden transition-[background-color,color,scale] duration-150 ease-out", PRESS)}
             onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open}>
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

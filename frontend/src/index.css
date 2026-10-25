@@ -30,8 +30,9 @@
   --color-clay-500: #c4562b;
   --color-clay-700: #8f3a1a;
 
-  --shadow-soft: 0 1px 2px rgb(23 32 27 / 0.04), 0 4px 16px rgb(23 32 27 / 0.06);
-  --shadow-lift: 0 2px 4px rgb(23 32 27 / 0.06), 0 12px 32px rgb(23 32 27 / 0.10);
+  /* A 1px ring gives surfaces their edge; the soft layers give elevation. */
+  --shadow-soft: 0 0 0 1px rgb(23 32 27 / 0.07), 0 1px 2px rgb(23 32 27 / 0.04), 0 4px 16px rgb(23 32 27 / 0.06);
+  --shadow-lift: 0 0 0 1px rgb(23 32 27 / 0.07), 0 2px 4px rgb(23 32 27 / 0.06), 0 12px 32px rgb(23 32 27 / 0.10);
 }
 
 @layer base {
@@ -43,14 +44,24 @@
   h1, h2, h3 { @apply font-display tracking-tight; }
   ::selection { @apply bg-brand-100; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
+  /* Controls draw their own pressed state, so drop the default grey tap flash */
+  button, a, label, [role="radio"], [role="switch"] { -webkit-tap-highlight-color: transparent; }
+
+  /* Icon stroke follows the weight of the text beside it: 1.5px at 400 up to 2.5px at 700 */
+  svg.lucide { stroke-width: 1.5px; }
+  svg.lucide > * { vector-effect: non-scaling-stroke; }
+  .font-medium svg.lucide { stroke-width: 1.83px; }
+  .font-semibold svg.lucide { stroke-width: 2.17px; }
+  .font-bold svg.lucide, .font-extrabold svg.lucide { stroke-width: 2.5px; }
 }
 
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.animate-rise { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes slide-in { from { transform: translateX(100%); } to { transform: none; } }
-.animate-slide-in { animation: slide-in .28s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-.animate-fade { animation: fade .2s ease both; }
-@media (prefers-reduced-motion: reduce) {
-  .animate-rise, .animate-slide-in, .animate-fade { animation: none; }
+/* Entrances for infrequent moments (page load, success, empty states). Stagger chunks 100ms apart. */
+@keyframes rise { from { opacity: 0; transform: translateY(12px); filter: blur(4px); } }
+@keyframes fade-in { from { opacity: 0; } }
+.animate-rise { animation: fade-in 300ms ease-out both; }
+@media (prefers-reduced-motion: no-preference) {
+  .animate-rise { animation-name: rise; }
 }
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }

@@ -4,7 +4,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import { ClipboardCheck, ExternalLink, LayoutDashboard, ListChecks, LogOut, Settings, Users, UserPlus } from "lucide-react";
 import { api } from "../lib/api";
 import { useApi } from "../lib/useApi";
-import { Button, ErrorState, Logo, PageLoader, cx } from "./ui";
+import { Button, cx, ErrorState, Logo, PageLoader, PRESS } from "./ui";
 
 const NAV = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
@@ -61,7 +61,7 @@ export default function AdminLayout() {
               <p className="truncate text-sm font-semibold">{me.name || "Team member"}</p>
               <p className="truncate text-xs text-ink-faint">{me.email}</p>
             </div>
-            <button onClick={signOut} className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5"
+            <button onClick={signOut} className={cx("grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)}
               aria-label="Sign out" title="Sign out">
               <LogOut className="h-4 w-4" />
             </button>
@@ -73,7 +73,7 @@ export default function AdminLayout() {
       <div className="sticky top-0 z-30 border-b border-line bg-card/95 backdrop-blur lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <Link to="/admin"><Logo /></Link>
-          <button onClick={signOut} className="grid h-9 w-9 place-items-center rounded-full text-ink-soft hover:bg-ink/5"
+          <button onClick={signOut} className={cx("grid h-9 w-9 place-items-center rounded-full text-ink-soft hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)}
             aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]">

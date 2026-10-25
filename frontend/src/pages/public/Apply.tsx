@@ -142,7 +142,7 @@ export default function Apply() {
           <span className="text-ink-faint">{Math.round(progress)}%</span>
         </div>
         <div className="mt-2 h-2 rounded-full bg-line">
-          <div className="h-2 rounded-full bg-brand-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div className="h-2 rounded-full bg-brand-500 motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out" style={{ width: `${progress}%` }} />
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Check, ClipboardCheck, Copy, Download, Search, SkipForward, X } from "lucide-react";
 import { PageHeader } from "../../components/AdminLayout";
-import { AButton, Badge, Button, Card, EmptyState, ErrorState, PageLoader, StatusBadge, TextArea, TextInput, cx, useToast } from "../../components/ui";
+import { AButton, Badge, Button, Card, cx, EmptyState, ErrorState, PageLoader, PRESS, StatusBadge, TextArea, TextInput, useToast } from "../../components/ui";
 import { ApiError, api } from "../../lib/api";
 import { CODED, DEVICES, HOURS, LIVE, OCCUPATIONS, STATUS, formatDate, label, learnerLink } from "../../lib/labels";
 import type { AppDetail, AppRow, Status } from "../../lib/types";
@@ -152,11 +152,18 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
+  // Open on the frame after mount so the slide-in is a transition (it can reverse if closed mid-way)
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const f = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(f); }, []);
+  function close() {
+    setShown(false);
+    setTimeout(onClose, 200); // matches the exit duration below
+  }
 
   useEffect(() => { if (data) setNote(data.reviewer_note); }, [data?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       if (data && !(e.target instanceof HTMLTextAreaElement) && ["0", "1", "2", "3"].includes(e.key)) save({ q9_score: Number(e.key) }, "score");
     };
     window.addEventListener("keydown", onKey);
@@ -180,14 +187,18 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="animate-fade absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={onClose} />
-      <aside className="animate-slide-in absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-paper shadow-lift" role="dialog" aria-modal="true" aria-label="Application">
+      <div onClick={close} className={cx("absolute inset-0 bg-ink/30 backdrop-blur-[2px] transition-[opacity] ease-out",
+        shown ? "opacity-100 duration-300" : "opacity-0 duration-200")} />
+      <aside role="dialog" aria-modal="true" aria-label="Application"
+        className={cx("absolute inset-y-0 right-0 flex w-full max-w-xl flex-col bg-paper shadow-lift transition-[translate,opacity]",
+          shown ? "translate-x-0 opacity-100 duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
+            : "translate-x-full duration-200 ease-out motion-reduce:translate-x-0 motion-reduce:opacity-0")}>
         <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
           <p className="text-sm font-semibold text-ink-soft">Application #{id}</p>
-          <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full hover:bg-ink/5" aria-label="Close"><X className="h-5 w-5" /></button>
+          <button onClick={close} className={cx("grid h-9 w-9 place-items-center rounded-full hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)} aria-label="Close"><X className="h-5 w-5" /></button>
         </div>
         {error ? <ErrorState message={error.message} /> : !data ? <PageLoader /> : (
-          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-6">
+          <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 py-6">
             <div>
               <div className="flex flex-wrap items-center gap-2"><StatusBadge status={data.status} />
                 {!data.eligible && <Badge tone="clay">{!data.is_adult ? "Under 18" : "Won't commit to 9 labs"}</Badge>}</div>
@@ -205,7 +216,7 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   {[0, 1, 2, 3].map((n) => (
                     <button key={n} onClick={() => save({ q9_score: n }, "score")} disabled={busy === "score"}
-                      className={cx("h-12 rounded-xl border font-display text-xl font-bold transition-all",
+                      className={cx("h-12 rounded-xl border font-display text-xl font-bold transition-[border-color,background-color,color,box-shadow,scale] duration-150 ease-out", PRESS,
                         data.q9_score === n ? "border-brand-600 bg-brand-600 text-white shadow-soft" : "border-line-strong bg-card hover:border-brand-500")}>
                       {n}
                     </button>
@@ -251,7 +262,7 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(Object.keys(STATUS) as Status[]).map((s) => (
                   <button key={s} onClick={() => save({ status: s }, "status")} disabled={busy === "status" || data.status === s}
-                    className={cx("flex h-10 items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors",
+                    className={cx("flex h-10 items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-[border-color,background-color,color,scale] duration-150 ease-out", PRESS,
                       data.status === s ? "border-ink bg-ink text-white" : "border-line-strong bg-card hover:border-ink-faint")}>
                     {data.status === s && <Check className="h-4 w-4" aria-hidden />} {STATUS[s]}
                   </button>
@@ -275,7 +286,7 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
           </div>
         )}
         <div className="flex items-center justify-between gap-3 border-t border-line bg-card px-5 py-3">
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="ghost" onClick={close}>Close</Button>
           <Button onClick={onNext} disabled={!hasNext}><SkipForward className="h-4 w-4" aria-hidden /> Next to score</Button>
         </div>
       </aside>

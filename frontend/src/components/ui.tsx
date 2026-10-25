@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { Children, createContext, isValidElement, useCallback, useContext, useState } from "react";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 import { Link } from "react-router-dom";
 import type { LinkProps } from "react-router-dom";
@@ -30,6 +30,7 @@ export function Logo({ className = "", light = false }: { className?: string; li
 /* ------------------------------------------------------------------ buttons */
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "sun";
+type Size = "sm" | "md" | "lg";
 const VARIANTS: Record<Variant, string> = {
   primary: "bg-brand-700 text-white hover:bg-brand-600 shadow-soft disabled:bg-brand-700/50",
   sun: "bg-sun-300 text-brand-900 hover:bg-sun-500 shadow-soft",
@@ -37,40 +38,64 @@ const VARIANTS: Record<Variant, string> = {
   ghost: "text-ink-soft hover:bg-ink/5 hover:text-ink",
   danger: "bg-clay-500 text-white hover:bg-clay-700",
 };
-const SIZES = { sm: "h-8 px-3 text-sm gap-1.5", md: "h-10 px-4 text-[15px] gap-2", lg: "h-12 px-6 text-base gap-2" };
+// Horizontal padding per size, and 2px less on the side that holds an icon (optical alignment)
+const SIZES: Record<Size, { base: string; x: string; iconStart: string; iconEnd: string }> = {
+  sm: { base: "h-8 text-sm gap-1.5", x: "px-3", iconStart: "pl-2.5", iconEnd: "pr-2.5" },
+  md: { base: "h-10 text-[15px] gap-2", x: "px-4", iconStart: "pl-3.5", iconEnd: "pr-3.5" },
+  lg: { base: "h-12 text-base gap-2", x: "px-6", iconStart: "pl-[22px]", iconEnd: "pr-[22px]" },
+};
 
-function buttonClass(variant: Variant, size: keyof typeof SIZES, className?: string) {
+/** Which ends of a button's content are icons (elements) rather than text. */
+function iconSides(children: ReactNode, leading = false) {
+  const parts = Children.toArray(children).filter((c) => !(typeof c === "string" && !c.trim()));
+  return {
+    start: leading || (parts.length > 0 && isValidElement(parts[0])),
+    end: parts.length > 1 && isValidElement(parts[parts.length - 1]),
+  };
+}
+
+// Press feedback: scale to 0.96 over 150ms ease-out, never when disabled, only without reduced motion
+export const PRESS = "motion-safe:enabled:active:scale-[0.96]";
+const PRESS_LINK = "motion-safe:active:scale-[0.96]";
+
+function buttonClass(variant: Variant, size: Size, children: ReactNode, opts: { link?: boolean; isStatic?: boolean; leading?: boolean; className?: string }) {
+  const s = SIZES[size];
+  const icon = iconSides(children, opts.leading);
   return cx(
-    "inline-flex items-center justify-center rounded-full font-semibold transition-colors duration-150",
-    "disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap",
-    VARIANTS[variant], SIZES[size], className,
+    "inline-flex items-center justify-center rounded-full font-semibold whitespace-nowrap",
+    "transition-[color,background-color,border-color,box-shadow,scale] duration-150 ease-out",
+    "disabled:cursor-not-allowed disabled:opacity-60",
+    !opts.isStatic && (opts.link ? PRESS_LINK : PRESS),
+    VARIANTS[variant], s.base, s.x, icon.start && s.iconStart, icon.end && s.iconEnd, opts.className,
   );
 }
 
-export function Button({ variant = "primary", size = "md", loading, children, className, ...rest }:
-  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: keyof typeof SIZES; loading?: boolean }) {
+type Common = { variant?: Variant; size?: Size; /** Turn off the press animation */ static?: boolean };
+
+export function Button({ variant = "primary", size = "md", loading, static: isStatic, children, className, disabled, ...rest }:
+  ButtonHTMLAttributes<HTMLButtonElement> & Common & { loading?: boolean }) {
   return (
-    <button className={buttonClass(variant, size, className)} disabled={loading || rest.disabled} {...rest}>
+    <button {...rest} disabled={loading || disabled}
+      className={buttonClass(variant, size, children, { isStatic, leading: loading, className })}>
       {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
       {children}
     </button>
   );
 }
 
-export function LinkButton({ variant = "primary", size = "md", className, ...rest }:
-  LinkProps & { variant?: Variant; size?: keyof typeof SIZES }) {
-  return <Link className={buttonClass(variant, size, className)} {...rest} />;
+export function LinkButton({ variant = "primary", size = "md", static: isStatic, className, children, ...rest }: LinkProps & Common) {
+  return <Link {...rest} className={buttonClass(variant, size, children as ReactNode, { link: true, isStatic, className })}>{children}</Link>;
 }
 
-export function AButton({ variant = "primary", size = "md", className, ...rest }:
-  AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: Variant; size?: keyof typeof SIZES }) {
-  return <a className={buttonClass(variant, size, className)} {...rest} />;
+export function AButton({ variant = "primary", size = "md", static: isStatic, className, children, ...rest }:
+  AnchorHTMLAttributes<HTMLAnchorElement> & Common) {
+  return <a {...rest} className={buttonClass(variant, size, children, { link: true, isStatic, className })}>{children}</a>;
 }
 
 /* ------------------------------------------------------------------ surfaces */
 
 export function Card({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("rounded-2xl border border-line bg-card shadow-soft", className)} {...rest}>{children}</div>;
+  return <div className={cx("rounded-2xl border border-transparent bg-card shadow-soft", className)} {...rest}>{children}</div>;
 }
 
 export function Badge({ tone = "neutral", children, className }:
@@ -139,15 +164,15 @@ export function ChoiceGroup<T extends string>({ name, value, options, onChange, 
         return (
           <label key={o.value}
             className={cx(
-              "flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+              "flex cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-[border-color,background-color,box-shadow] duration-150 ease-out",
               checked ? "border-brand-500 bg-brand-50/60 ring-4 ring-brand-500/10"
                 : invalid ? "border-clay-500/60 hover:border-clay-500" : "border-line-strong hover:border-ink-faint",
             )}>
             <input type="radio" name={name} value={o.value} checked={checked} onChange={() => onChange(o.value)}
               className="sr-only" />
-            <span className={cx("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+            <span className={cx("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-[border-color,background-color] duration-150 ease-out",
               checked ? "border-brand-600 bg-brand-600" : "border-line-strong")}>
-              {checked && <Check className="h-3 w-3 text-white" strokeWidth={3.5} aria-hidden />}
+              {checked && <Check className="h-3 w-3 text-white" aria-hidden />}
             </span>
             <span className="min-w-0">
               <span className="block text-[15px] font-medium text-ink">{o.label}</span>
@@ -169,9 +194,9 @@ export function Toggle({ checked, onChange, label, hint }:
         {hint && <span className="block text-sm text-ink-soft">{hint}</span>}
       </span>
       <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-        className={cx("relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors",
+        className={cx("relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-[background-color] duration-150 ease-out",
           checked ? "bg-brand-600" : "bg-line-strong")}>
-        <span className={cx("absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow transition-transform",
+        <span className={cx("absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow motion-safe:transition-[translate] motion-safe:duration-150 motion-safe:ease-out",
           checked && "translate-x-5")} />
       </button>
     </label>
@@ -222,7 +247,7 @@ export function ProgressRing({ value, max, size = 120, stroke = 10, children }:
           className="text-brand-100" />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
-          className="text-brand-600 transition-[stroke-dashoffset] duration-700" />
+          className="text-brand-600 motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700 motion-safe:ease-out" />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">{children}</div>
     </div>
@@ -262,3 +287,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export const useToast = () => useContext(ToastContext);
+
+/* ------------------------------------------------------------------ disclosure */
+
+/** Expands and collapses with a transition, so reversing mid-way retargets instead of jumping. */
+export function Collapse({ open, children, className }: { open: boolean; children: ReactNode; className?: string }) {
+  return (
+    <div className={cx("grid transition-[grid-template-rows,opacity] duration-150 ease-out motion-reduce:transition-[opacity]",
+      open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0", className)}
+      inert={!open} aria-hidden={!open}>
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  );
+}

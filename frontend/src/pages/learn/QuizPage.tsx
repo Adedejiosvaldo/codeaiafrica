@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, PartyPopper, X } from "lucide-react";
 import { ApiError, api } from "../../lib/api";
 import type { Quiz } from "../../lib/types";
 import { useApi } from "../../lib/useApi";
-import { Button, Card, ErrorState, LinkButton, Logo, PageLoader, ProgressRing, cx } from "../../components/ui";
+import { Button, Card, ErrorState, LinkButton, Logo, PageLoader, PRESS, ProgressRing, cx } from "../../components/ui";
 
 type Result = { score: number; out_of: number; pre_score: number | null };
 
@@ -85,17 +85,17 @@ export default function QuizPage() {
         <span className="text-ink-faint">{onConfidence ? "Last step" : `Question ${index + 1} of ${total}`}</span>
       </div>
       <div className="mt-2 h-2 rounded-full bg-line">
-        <div className="h-2 rounded-full bg-brand-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="h-2 rounded-full bg-brand-500 motion-safe:transition-[width] motion-safe:duration-150 motion-safe:ease-out" style={{ width: `${progress}%` }} />
       </div>
 
       {!onConfidence ? (
-        <Card key={q.id} className="animate-rise mt-6 p-6 sm:p-8">
+        <Card key={q.id} className="mt-6 p-6 sm:p-8">
           <h1 className="text-2xl font-bold leading-snug">{q.text}</h1>
           <div className="mt-6 space-y-2.5" role="radiogroup">
             {q.options.map((opt, i) => (
               <button key={opt} role="radio" aria-checked={chosen === i}
                 onClick={() => setAnswers((a) => { const n = [...a]; n[index] = i; return n; })}
-                className={cx("flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-[16px] font-medium transition-all",
+                className={cx("flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-[16px] font-medium transition-[border-color,background-color,box-shadow,scale] duration-150 ease-out", PRESS,
                   chosen === i ? "border-brand-500 bg-brand-50/70 ring-4 ring-brand-500/10" : "border-line-strong bg-card hover:border-ink-faint")}>
                 <span className={cx("grid h-7 w-7 shrink-0 place-items-center rounded-lg text-sm font-bold",
                   chosen === i ? "bg-brand-600 text-white" : "bg-paper text-ink-soft")}>{"ABC"[i]}</span>
@@ -117,7 +117,7 @@ export default function QuizPage() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button key={n} type="button" aria-pressed={confidence[i] === n}
                       onClick={() => setConfidence((c) => { const x = [...c]; x[i] = n; return x; })}
-                      className={cx("h-12 rounded-xl border text-lg font-bold transition-all",
+                      className={cx("h-12 rounded-xl border text-lg font-bold transition-[border-color,background-color,color,scale] duration-150 ease-out", PRESS,
                         confidence[i] === n ? "border-brand-600 bg-brand-600 text-white" : "border-line-strong bg-card hover:border-ink-faint")}>
                       {n}
                     </button>

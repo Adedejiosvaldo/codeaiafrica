@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, Check, Copy, Download, GraduationCap, RefreshCw, Search } from "lucide-react";
 import { PageHeader } from "../../components/AdminLayout";
-import { AButton, Badge, Card, EmptyState, ErrorState, PageLoader, TextInput, cx, useToast } from "../../components/ui";
+import { AButton, Badge, Card, cx, EmptyState, ErrorState, PageLoader, PRESS, TextInput, useToast } from "../../components/ui";
 import { ApiError, api } from "../../lib/api";
 import { formatDate, learnerLink } from "../../lib/labels";
 import type { LearnerRow } from "../../lib/types";
@@ -84,7 +84,7 @@ export default function Learners() {
                           <span className={cx("mx-auto grid h-6 w-6 place-items-center rounded-md",
                             l.weeks_done.includes(w.week) ? "bg-brand-500 text-white" : "bg-line/70")}
                             title={`Week ${w.week}: ${l.weeks_done.includes(w.week) ? "done" : "not yet"}`}>
-                            {l.weeks_done.includes(w.week) && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
+                            {l.weeks_done.includes(w.week) && <Check className="h-3.5 w-3.5" aria-hidden />}
                           </span>
                         </td>
                       ))}
@@ -96,8 +96,8 @@ export default function Learners() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => copy(l.token)} className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5" title="Copy link" aria-label={`Copy ${l.name}'s link`}><Copy className="h-4 w-4" /></button>
-                          <button onClick={() => reset(l)} className="grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5" title="Make a new link" aria-label={`Make a new link for ${l.name}`}><RefreshCw className="h-4 w-4" /></button>
+                          <button onClick={() => copy(l.token)} className={cx("grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)} title="Copy link" aria-label={`Copy ${l.name}'s link`}><Copy className="h-4 w-4" /></button>
+                          <button onClick={() => reset(l)} className={cx("grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)} title="Make a new link" aria-label={`Make a new link for ${l.name}`}><RefreshCw className="h-4 w-4" /></button>
                         </div>
                       </td>
                     </tr>

@@ -8,7 +8,7 @@ import { ApiError, api } from "../../lib/api";
 import { useApi } from "../../lib/useApi";
 import type { Week } from "../../lib/types";
 import { usePublicConfig } from "../../components/PublicLayout";
-import { Badge, Button, Card, LinkButton, TextInput, cx } from "../../components/ui";
+import { Badge, Button, Card, Collapse, cx, LinkButton, TextInput } from "../../components/ui";
 
 export default function Home() {
   const config = usePublicConfig();
@@ -22,7 +22,8 @@ export default function Home() {
         <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-sun-300/25 blur-3xl" />
         <div aria-hidden className="pointer-events-none absolute -left-32 top-48 h-[380px] w-[380px] rounded-full bg-brand-200/40 blur-3xl" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pb-24 lg:pt-20">
-          <div className="animate-rise">
+          <div>
+            <div className="animate-rise">
             <Badge tone="brand" className="mb-5 py-1 text-[13px]">
               <Sparkles className="h-3.5 w-3.5" aria-hidden /> Free · 12 weeks · {places} places
             </Badge>
@@ -30,11 +31,12 @@ export default function Home() {
               Learn AI by <span className="relative whitespace-nowrap text-brand-700">building it<svg aria-hidden viewBox="0 0 200 12" className="absolute -bottom-1 left-0 h-3 w-full text-sun-300" preserveAspectRatio="none"><path d="M2 9c50-6 120-8 196-4" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" /></svg></span>.
               <br className="hidden sm:block" /> Right in your browser.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
+            </div>
+            <p className="animate-rise stagger-1 mt-6 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
               In 12 weeks you'll build and deploy an AI tool that solves a real Nigerian problem. No fees,
               nothing to install, and no expensive laptop needed.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="animate-rise stagger-2 mt-8 flex flex-wrap gap-3">
               <LinkButton to={open ? "/apply" : "/#waitlist"} size="lg">
                 {open ? "Apply now" : "Join the waitlist"} <ArrowRight className="h-4 w-4" aria-hidden />
               </LinkButton>
@@ -102,7 +104,7 @@ export default function Home() {
             { icon: FileSearch, title: "Ask-the-law bot", body: "Answers questions about the Nigeria Data Protection Act, and shows where it found each answer." },
             { icon: Banknote, title: "Bank alert parser", body: "Turns pasted SMS alerts into a clean monthly spending table." },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="group flex gap-4 rounded-2xl border border-line bg-card p-5 transition-shadow hover:shadow-lift">
+            <div key={title} className="group flex gap-4 rounded-2xl border border-transparent bg-card p-5 shadow-soft transition-[box-shadow] duration-150 ease-out hover:shadow-lift">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sun-100 text-[#8a5d00]"><Icon className="h-5 w-5" aria-hidden /></span>
               <div>
                 <h3 className="text-lg font-bold">{title}</h3>
@@ -192,9 +194,9 @@ function FaqItem({ q, a }: { q: string; a: string }) {
       <button className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-[17px] font-semibold"
         onClick={() => setOpen(!open)} aria-expanded={open}>
         {q}
-        <ChevronDown className={cx("h-5 w-5 shrink-0 text-ink-faint transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cx("h-5 w-5 shrink-0 text-ink-faint motion-safe:transition-[rotate] motion-safe:duration-150 motion-safe:ease-out", open && "rotate-180")} aria-hidden />
       </button>
-      {open && <p className="animate-fade px-5 pb-5 leading-relaxed text-ink-soft">{a}</p>}
+      <Collapse open={open}><p className="px-5 pb-5 leading-relaxed text-ink-soft">{a}</p></Collapse>
     </div>
   );
 }
@@ -288,7 +290,7 @@ function WaitlistForm() {
 
 function HeroVisual() {
   return (
-    <div className="animate-rise relative mx-auto w-full max-w-md [animation-delay:120ms] lg:max-w-none">
+    <div className="animate-rise stagger-3 relative mx-auto w-full max-w-md lg:max-w-none">
       <Card className="overflow-hidden shadow-lift">
         <div className="flex items-center gap-1.5 border-b border-line bg-paper px-4 py-3">
           <span className="h-3 w-3 rounded-full bg-clay-500/70" />
