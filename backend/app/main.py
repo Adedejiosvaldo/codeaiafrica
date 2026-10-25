@@ -1,5 +1,6 @@
 """Akada Labs web app: the API, plus the built frontend when present."""
 from fastapi import FastAPI, Request
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
@@ -72,6 +73,8 @@ def create_app(cfg: Config | None = None):
     app.state.db = Database(cfg.database_url)
     bootstrap(app.state.db, cfg)
 
+    # Compress responses: the in-browser Python download shrinks by about two thirds
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
     app.add_exception_handler(RequestValidationError, friendly_errors)
     app.include_router(public.router)
     app.include_router(learner.router)

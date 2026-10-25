@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Award, CalendarDays, CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Laptop, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, CalendarDays, CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Laptop, Lock, Play } from "lucide-react";
 import { useLearner } from "../../components/LearnerLayout";
 import { STATUS_LABEL, SubmitForm } from "../../components/learner-widgets";
 import { AButton, Badge, Card, LinkButton } from "../../components/ui";
@@ -93,7 +93,19 @@ export default function WeekPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <Card className="p-5 sm:p-6">
-            {lab && (
+            {week.interactive ? (
+              <>
+                <LinkButton to={`${base}/lab/${week.week}`} size="lg" className="w-full">
+                  <Play className="h-4 w-4 fill-current" aria-hidden /> {week.done ? "Open the interactive lab" : "Start the interactive lab"}
+                </LinkButton>
+                <p className="mt-2 text-center text-xs text-ink-faint">Step-by-step, with Python running in your browser. Passing every step submits this week.</p>
+                {lab && (
+                  <a href={lab.href} target="_blank" rel="noopener" className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
+                    Prefer a notebook? Open it in the browser lab <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                  </a>
+                )}
+              </>
+            ) : lab && (
               <AButton href={lab.href} target={lab.href.startsWith("/try") ? undefined : "_blank"} rel="noopener" size="lg" className="w-full">
                 {lab.label} <ExternalLink className="h-4 w-4" aria-hidden />
               </AButton>

@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Route, Routes } from "react-router-dom";
 import PublicLayout from "./components/PublicLayout";
 import AdminLayout from "./components/AdminLayout";
@@ -10,6 +11,10 @@ import LearnerHome from "./pages/learn/LearnerHome";
 import LearnerPath from "./pages/learn/LearnerPath";
 import WeekPage from "./pages/learn/WeekPage";
 import QuizHub from "./pages/learn/QuizHub";
+import { PageLoader } from "./components/ui";
+
+// The lab bundles a code editor; load it only when a learner opens a lab
+const LabPage = lazy(() => import("./pages/learn/LabPage"));
 import QuizPage from "./pages/learn/QuizPage";
 import Login from "./pages/admin/Login";
 import Overview from "./pages/admin/Overview";
@@ -29,6 +34,7 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="learn/:token/quiz/:phase" element={<QuizPage />} />
+      <Route path="learn/:token/lab/:week" element={<Suspense fallback={<PageLoader />}><LabPage /></Suspense>} />
       <Route path="learn/:token" element={<LearnerLayout />}>
         <Route index element={<LearnerHome />} />
         <Route path="path" element={<LearnerPath />} />

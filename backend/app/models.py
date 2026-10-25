@@ -82,6 +82,7 @@ class Learner(Base):
     application: Mapped[Application] = relationship(back_populates="learner")
     submissions: Mapped[list["Submission"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
     quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
+    lab_steps: Mapped[list["LabStep"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
 
 
 class Submission(Base):
@@ -108,3 +109,16 @@ class QuizAttempt(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     learner: Mapped[Learner] = relationship(back_populates="quiz_attempts")
+
+
+class LabStep(Base):
+    """One step of an interactive lab that a learner has passed."""
+    __tablename__ = "lab_steps"
+    __table_args__ = (UniqueConstraint("learner_id", "week", "step_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"))
+    week: Mapped[int] = mapped_column(Integer)
+    step_id: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+    learner: Mapped[Learner] = relationship(back_populates="lab_steps")

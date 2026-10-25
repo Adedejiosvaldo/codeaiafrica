@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import course
+from .. import course, labs
 from ..codes import check_code
-from ..models import Learner, QuizAttempt, Settings, Submission, now
+from ..models import LabStep, Learner, QuizAttempt, Settings, Submission, now
 from ..schemas import QuizIn, SubmissionIn
 from ..security import get_db
 
@@ -62,7 +62,7 @@ def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get
     for w in course.WEEKS:
         sub = done.get(w["week"])
         weeks.append({**w, "done": sub is not None, "value": sub.value if sub else None,
-                      "submitted_at": sub.created_at if sub else None})
+                      "submitted_at": sub.created_at if sub else None, "interactive": w["week"] in labs.LABS})
     return {
         "name": learner.name,
         "first_name": learner.name.split()[0],
@@ -142,3 +142,41 @@ def submit_quiz(phase: str, body: QuizIn, learner: Learner = Depends(get_learner
     pre = next((a.score for a in learner.quiz_attempts if a.phase == "pre"), None)
     return {"score": score, "out_of": len(course.QUIZ) * course.POINTS_PER_QUESTION,
             "pre_score": pre if phase == "post" else None}
+
+
+# ---------------------------------------------------------------------------- interactive labs
+
+LAB_DONE = "Completed in the interactive lab"
+
+
+def get_lab(week):
+    if week not in labs.LABS:
+        raise HTTPException(404, "This week doesn't have an interactive lab yet.")
+    return labs.LABS[week]
+
+
+@router.get("/{token}/labs/{week}")
+def read_lab(week: int, learner: Learner = Depends(get_learner)):
+    lab = get_lab(week)
+    passed = [s.step_id for s in learner.lab_steps if s.week == week]
+    done = any(sub.week == week for sub in learner.submissions)
+    return {**lab, "passed": passed, "week_done": done, "email": learner.email}
+
+
+@router.post("/{token}/labs/{week}/steps/{step_id}")
+def pass_step(week: int, step_id: str, learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
+    get_lab(week)
+    ids = labs.step_ids(week)
+    if step_id not in ids:
+        raise HTTPException(404, "There's no step with that name in this lab.")
+    passed = {s.step_id for s in learner.lab_steps if s.week == week}
+    if step_id not in passed:
+        db.add(LabStep(learner_id=learner.id, week=week, step_id=step_id))
+        passed.add(step_id)
+    completed = passed >= set(ids)
+    newly_completed = False
+    if completed and not any(sub.week == week for sub in learner.submissions):
+        db.add(Submission(learner_id=learner.id, week=week, value=LAB_DONE))
+        newly_completed = True
+    db.commit()
+    return {"passed": sorted(passed, key=ids.index), "completed": completed, "newly_completed": newly_completed}

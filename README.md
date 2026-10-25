@@ -30,6 +30,25 @@ One app runs the whole programme:
   question (the rest of the rubric is scored automatically), selection preview and apply (places, then the waitlist),
   a learner progress grid with copyable links, the waitlist, settings, team accounts, and CSV exports.
 
+### Interactive labs
+
+Weeks with an interactive lab (week 2 so far) open a split screen at `/learn/<token>/lab/<week>`: step-by-step
+instructions on the left, a Python editor and output on the right. Python runs in the learner's browser with
+[Pyodide](https://pyodide.org), so there is nothing to host and nothing to install. On phones the two halves become tabs.
+
+- Each step explains an idea, shows an example, and sets a task. **Check** runs the learner's code, then a hidden
+  check that either passes or explains what's missing. A hint is always available; the worked solution unlocks after two checks.
+- Passing every step marks the week as submitted, so learners don't need a completion code for these weeks.
+- Pyodide's core files (about 12 MB, compressed by most hosts) are served from the app at `/pyodide/`; extra
+  packages such as pandas download from the Pyodide CDN on first use. Override with `VITE_PYODIDE_URL` and
+  `VITE_PYODIDE_PACKAGES_URL` at build time.
+
+To add a lab, add a dictionary like `WEEK2` in `backend/app/labs.py` and register it in `LABS`. Each step needs
+`id`, `title`, `body` (simple Markdown), `task`, `starter`, `check`, `hint` and `solution`. A check is Python that runs
+after the learner's code in the same session and raises `AssertionError("what to fix")` when the step isn't done; it can
+read `__output__` (what the code printed) and `__code__` (what they wrote). `backend/tests/test_labs.py` runs every
+solution against its check and makes sure every starter fails, so run the tests after editing a lab.
+
 ### Run it on your computer
 
     # API, on port 8000

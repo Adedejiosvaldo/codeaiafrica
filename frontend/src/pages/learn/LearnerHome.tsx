@@ -45,7 +45,11 @@ export default function LearnerHome() {
               </div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
-              {lab && (
+              {up.interactive ? (
+                <LinkButton to={`${base}/lab/${up.week}`} variant="sun" size="lg">
+                  Start interactive lab <ArrowRight className="h-4 w-4" aria-hidden />
+                </LinkButton>
+              ) : lab && (
                 <AButton href={lab.href} target={lab.href.startsWith("/try") ? undefined : "_blank"} rel="noopener" variant="sun" size="lg">
                   {lab.label} <ArrowRight className="h-4 w-4" aria-hidden />
                 </AButton>

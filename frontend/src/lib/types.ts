@@ -25,6 +25,7 @@ export interface Week {
 
 export interface LearnerWeek extends Week {
   done: boolean;
+  interactive: boolean;
   value: string | null;
   submitted_at: string | null;
 }
