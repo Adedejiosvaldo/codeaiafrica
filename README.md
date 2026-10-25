@@ -7,6 +7,8 @@ The full plan is in [`docs/build-specs.md`](docs/build-specs.md).
 
 | Folder | What it is |
 | --- | --- |
+| `backend/` | The web app's API (FastAPI + SQLite): waitlist, applications, selection, learner progress, quiz, team accounts |
+| `frontend/` | The web app's interface (React + TypeScript + Tailwind): public site, application form, learner dashboard, team dashboard |
 | `lead-magnet/` | "Train your first AI in 10 minutes": one web page that walks someone through Teachable Machine, explains what happened, and points to the waitlist |
 | `lab/` | The browser lab (JupyterLite): weeks 2-5 notebooks that run Python in the browser with nothing installed |
 | `lab/content/data/` | The trimmed CSVs for weeks 2-5 (see the README there for sources and licences) |
@@ -16,6 +18,51 @@ The full plan is in [`docs/build-specs.md`](docs/build-specs.md).
 | `tests/` | Run every notebook with model answers and check each self-check passes |
 
 The site workflow publishes the lead magnet at `/` and the browser lab at `/lab/` on GitHub Pages.
+
+## The web app
+
+One app runs the whole programme:
+
+- **Public site**: home page, the 10-minute "Train your first AI" guide, a waitlist, and a 4-step application form.
+- **Learner dashboard**: each accepted learner gets a private link (`/learn/<token>`). They see their 12 weeks,
+  open each lab, submit completion codes (checked against their email) or links, and take the week 1 and week 12 quiz.
+- **Team dashboard** (`/admin`): overview charts, application review with one-tap 0–3 scoring for the problem
+  question (the rest of the rubric is scored automatically), selection preview and apply (places, then the waitlist),
+  a learner progress grid with copyable links, the waitlist, settings, team accounts, and CSV exports.
+
+### Run it on your computer
+
+    # API, on port 8000
+    cd backend
+    python -m venv .venv && . .venv/bin/activate
+    pip install -r requirements-dev.txt
+    ADMIN_EMAIL=you@example.org ADMIN_PASSWORD='choose-a-password' uvicorn app.main:app --reload
+
+    # Interface, on port 5173 (in a second terminal)
+    cd frontend
+    npm install
+    npm run dev
+
+Open http://localhost:5173, and sign in at /admin with the email and password above.
+To try it with sample data, run `python -m app.cli seed-demo` in `backend/` on an empty database
+(it uses example.com addresses). Run the API tests with `python -m pytest tests` in `backend/`.
+
+### Deploy
+
+The `Dockerfile` builds the interface and serves it together with the API on port 8000. Set:
+
+| Variable | What it's for |
+| --- | --- |
+| `SECRET_KEY` | Required. A long random string that signs team sessions |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Creates the first team account on first start. Change the password after signing in |
+| `PUBLIC_URL` | The site address, used for learner links in the CSV export |
+| `DATABASE_URL` | Defaults to SQLite at `/data/akada.db`; mount a volume at `/data` so it survives restarts |
+
+Any host that runs a container works (Render, Railway, Fly.io, a VPS). The database tables are created on
+first start; there are no migrations yet, so add Alembic before changing the models once real data is in.
+
+Frontend settings (at build time): `VITE_LAB_URL` (where the browser lab lives, default `/lab`) and
+`VITE_NOTEBOOK_REPO` (GitHub repo for "Open in Colab" links, default `Adedejiosvaldo/codeaiafrica`).
 
 ## How the notebooks work
 

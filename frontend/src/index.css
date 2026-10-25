@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/bricolage-grotesque";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Inter Variable", ui-sans-serif, sans-serif;
+
+  --color-paper: #faf8f3;
+  --color-card: #ffffff;
+  --color-ink: #17201b;
+  --color-ink-soft: #4a554e;
+  --color-ink-faint: #7b857e;
+  --color-line: #e7e3d8;
+  --color-line-strong: #d5d0c2;
+
+  --color-brand-50: #eef7f1;
+  --color-brand-100: #d6ede0;
+  --color-brand-200: #acdac2;
+  --color-brand-500: #138a57;
+  --color-brand-600: #0b7046;
+  --color-brand-700: #0b5d3b;
+  --color-brand-900: #0a2e1f;
+
+  --color-sun-100: #fdf1d3;
+  --color-sun-300: #f6c453;
+  --color-sun-500: #e0a21c;
+
+  --color-clay-50: #fbefe9;
+  --color-clay-500: #c4562b;
+  --color-clay-700: #8f3a1a;
+
+  --shadow-soft: 0 1px 2px rgb(23 32 27 / 0.04), 0 4px 16px rgb(23 32 27 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(23 32 27 / 0.06), 0 12px 32px rgb(23 32 27 / 0.10);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3 { @apply font-display tracking-tight; }
+  ::selection { @apply bg-brand-100; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.animate-rise { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: none; } }
+.animate-slide-in { animation: slide-in .28s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade { animation: fade .2s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .animate-slide-in, .animate-fade { animation: none; }
+}

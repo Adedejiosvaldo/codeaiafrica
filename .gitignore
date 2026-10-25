@@ -6,3 +6,8 @@ _site/
 raw/
 *_scored.csv
 *_checked.csv
+node_modules/
+frontend/dist/
+backend/*.db
+.venv/
+*.tsbuildinfo

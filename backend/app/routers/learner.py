@@ -1,0 +1,119 @@
+from urllib.parse import urlparse
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from .. import course
+from ..codes import check_code
+from ..models import Learner, QuizAttempt, Settings, Submission, now
+from ..schemas import QuizIn, SubmissionIn
+from ..security import get_db
+
+router = APIRouter(prefix="/api/learner", tags=["learner"])
+PHASES = ("pre", "post")
+
+
+def get_learner(token: str, db: Session = Depends(get_db)):
+    learner = db.scalar(select(Learner).where(Learner.token == token))
+    if learner is None:
+        raise HTTPException(404, "This link isn't valid. Check you copied all of it, or ask the team for yours.")
+    return learner
+
+
+def quiz_state(learner, s):
+    attempts = {a.phase: a for a in learner.quiz_attempts}
+    state = {}
+    for phase in PHASES:
+        a = attempts.get(phase)
+        state[phase] = {
+            "open": phase == "pre" or s.post_quiz_open,
+            "done": a is not None,
+            "score": a.score if a else None,
+            "confidence": a.confidence if a else None,
+        }
+    return state
+
+
+@router.get("/{token}")
+def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
+    s = db.scalar(select(Settings))
+    done = {sub.week: sub for sub in learner.submissions}
+    weeks = []
+    for w in course.WEEKS:
+        sub = done.get(w["week"])
+        weeks.append({**w, "done": sub is not None, "value": sub.value if sub else None,
+                      "submitted_at": sub.created_at if sub else None})
+    return {
+        "name": learner.name,
+        "first_name": learner.name.split()[0],
+        "email": learner.email,
+        "cohort_name": s.cohort_name,
+        "labs_required": s.labs_required,
+        "labs_done": len(done),
+        "demo_day": s.demo_day,
+        "weeks": weeks,
+        "quiz": quiz_state(learner, s),
+    }
+
+
+def valid_link(value):
+    parsed = urlparse(value.strip())
+    return parsed.scheme in ("http", "https") and "." in parsed.netloc
+
+
+@router.post("/{token}/submissions")
+def submit(body: SubmissionIn, learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
+    week = course.WEEK_BY_NUMBER[body.week]
+    value = body.value.strip()
+    if week["kind"] == "code":
+        problem = check_code(learner.email, body.week, value)
+        if problem:
+            raise HTTPException(422, problem)
+        value = value.upper()
+    elif not valid_link(value):
+        raise HTTPException(422, "Paste a full link that starts with https://")
+
+    sub = db.scalar(select(Submission).where(Submission.learner_id == learner.id, Submission.week == body.week))
+    if sub:
+        sub.value, sub.created_at = value, now()
+    else:
+        db.add(Submission(learner_id=learner.id, week=body.week, value=value))
+    db.commit()
+    return {"message": f"Week {body.week} done. Nice work!", "week": body.week}
+
+
+def check_phase(phase, learner, db):
+    if phase not in PHASES:
+        raise HTTPException(404, "There's no quiz here.")
+    if phase == "post" and not db.scalar(select(Settings)).post_quiz_open:
+        raise HTTPException(403, "The end-of-course quiz opens in week 12.")
+
+
+@router.get("/{token}/quiz/{phase}")
+def get_quiz(phase: str, learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
+    check_phase(phase, learner, db)
+    attempt = next((a for a in learner.quiz_attempts if a.phase == phase), None)
+    return {
+        **course.public_quiz(),
+        "phase": phase,
+        "done": attempt is not None,
+        "score": attempt.score if attempt else None,
+    }
+
+
+@router.post("/{token}/quiz/{phase}")
+def submit_quiz(phase: str, body: QuizIn, learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
+    check_phase(phase, learner, db)
+    if any(a.phase == phase for a in learner.quiz_attempts):
+        raise HTTPException(409, "You've already taken this quiz.")
+    if len(body.answers) != len(course.QUIZ) or len(body.confidence) != len(course.CONFIDENCE):
+        raise HTTPException(422, "Answer every question before you submit.")
+    if any(not 0 <= a < len(q[1]) for a, q in zip(body.answers, course.QUIZ)):
+        raise HTTPException(422, "One of the answers isn't a valid option.")
+    score = course.grade(body.answers)
+    db.add(QuizAttempt(learner_id=learner.id, phase=phase, answers=body.answers, confidence=body.confidence, score=score))
+    db.commit()
+    pre = next((a.score for a in learner.quiz_attempts if a.phase == "pre"), None)
+    return {"score": score, "out_of": len(course.QUIZ) * course.POINTS_PER_QUESTION,
+            "pre_score": pre if phase == "post" else None}
