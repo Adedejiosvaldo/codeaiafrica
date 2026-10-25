@@ -7,7 +7,7 @@ import getpass
 import random
 import secrets
 import sys
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
@@ -60,6 +60,10 @@ def seed_demo():
         settings = s.scalar(select(Settings))
         settings.applications_open = True
         settings.applications_close = "31 January 2027"
+        # Start the demo cohort 3 weeks ago (on a Saturday) so the learner pages show a course in progress
+        today = now().date()
+        start = today - timedelta(days=(today.weekday() - 5) % 7) - timedelta(weeks=3)
+        settings.start_date = start.isoformat()
         apps = []
         for i in range(86):
             name = f"{rng.choice(FIRST)} {rng.choice(LAST)}"
@@ -87,10 +91,12 @@ def seed_demo():
             learner = Learner(application=a, name=a.name, email=a.email, token=secrets.token_urlsafe(18))
             s.add(learner)
             s.flush()
-            done = rng.randint(2, 6)
+            done = rng.randint(1, 4)
             for w in course.WEEKS[:done]:
                 value = "https://x.com/demo/status/1" if w["kind"] == "link" else "AK-W00-DEMO00"
-                s.add(Submission(learner_id=learner.id, week=w["week"], value=value))
+                day = start + timedelta(weeks=w["week"] - 1, days=rng.randint(0, 6))
+                when = min(datetime.combine(day, datetime.min.time(), timezone.utc) + timedelta(hours=rng.randint(8, 22)), now())
+                s.add(Submission(learner_id=learner.id, week=w["week"], value=value, created_at=when))
             answers = [rng.choice([q[2], 0, 1]) for q in course.QUIZ]
             s.add(QuizAttempt(learner_id=learner.id, phase="pre", answers=answers,
                               confidence=[rng.randint(1, 3) for _ in course.CONFIDENCE], score=course.grade(answers)))

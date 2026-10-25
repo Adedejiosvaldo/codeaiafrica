@@ -18,7 +18,7 @@ export default function QuizPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const back = `/learn/${token}`;
+  const back = `/learn/${token}/quiz`;
 
   const frame = (body: ReactNode) => (
     <div className="min-h-dvh">

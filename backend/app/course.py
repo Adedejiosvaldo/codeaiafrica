@@ -39,6 +39,38 @@ WEEKS = [
      "summary": "Show your tool live in 3 minutes.",
      "prompt": "Link to your demo (Space or recording)"},
 ]
+# What each lab covers, from the notebook specs, plus rough time and phase for the learning path
+DETAILS = {
+    1: (40, ["Collect about 30 photos for each of 2 classes", "Train an image model in Teachable Machine",
+             "Test it live and find what fools it", "Share a clip of it working"]),
+    2: (90, ["Store readings in variables and print sentences about them", "Use lists, max and averages",
+             "Label air quality with loops and if statements", "Write a function and count poor-air hours in real data"]),
+    3: (120, ["Load a CSV with pandas and inspect it", "Filter to one food and one market",
+              "Compare markets with groupby", "Chart prices over time and say what it shows"]),
+    4: (120, ["Choose features and a label", "Split data into train and test sets",
+              "Train and score a decision tree", "Explain which feature mattered most"]),
+    5: (120, ["Train a sentiment model on English-like tweets", "Measure how it does on Pidgin",
+              "Retrain with Pidgin and compare", "See how accuracy can mislead on skewed data"]),
+    6: (150, ["Code a forward pass by hand in NumPy", "Take one gradient step and watch the loss fall",
+              "Fine-tune a pretrained image model on a GPU", "Study the photos it gets wrong"]),
+    7: (120, ["Call an LLM from Python with your key stored safely", "Steer it with system prompts and temperature",
+              "Pull structured JSON out of a bank SMS", "Handle failed calls without crashing"]),
+    8: (120, ["Turn sentences into embeddings", "Find similar sentences with cosine similarity",
+              "Build semantic search over a Nigerian law", "Compare it with keyword search in Pidgin"]),
+    9: (150, ["Split a document into chunks", "Retrieve the best chunks for a question",
+              "Generate answers that cite their sources", "Break it, and pick your capstone"]),
+    10: (150, ["Write tools the LLM can call", "Build a function-calling loop",
+               "Stop runaway agents with a step limit", "Log every step the agent takes"]),
+    11: (180, ["Wrap your capstone in a Gradio app", "Store your API key as a Space secret",
+               "Deploy free on Hugging Face Spaces", "Check it works for someone else"]),
+    12: (90, ["Rehearse a 3-minute live demo", "Show your tool to a public audience",
+              "Answer one minute of questions", "Take the final knowledge check"]),
+}
+PHASES = [("Foundations", range(1, 6)), ("Modern AI", range(6, 11)), ("Ship it", range(11, 13))]
+for w in WEEKS:
+    w["minutes"], w["objectives"] = DETAILS[w["week"]]
+    w["phase"] = next(name for name, weeks in PHASES if w["week"] in weeks)
+
 WEEK_BY_NUMBER = {w["week"]: w for w in WEEKS}
 
 QUIZ = [

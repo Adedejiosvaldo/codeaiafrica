@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -35,6 +36,24 @@ def quiz_state(learner, s):
     return state
 
 
+LAGOS = timezone(timedelta(hours=1))
+
+
+def schedule(start_date, today=None):
+    """Current course week (0 before it starts, 13 after week 12) and the next live session date."""
+    try:
+        start = date.fromisoformat(start_date)
+    except ValueError:
+        return {"current_week": 0, "next_session": None}
+    today = today or datetime.now(LAGOS).date()
+    days = (today - start).days
+    current = 0 if days < 0 else min(13, days // 7 + 1)
+    sessions = [start + timedelta(weeks=i) for i in range(12)]
+    upcoming = next((d for d in sessions if d >= today), None)
+    return {"current_week": current, "next_session": upcoming.isoformat() if upcoming else None,
+            "next_session_week": sessions.index(upcoming) + 1 if upcoming else None}
+
+
 @router.get("/{token}")
 def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
     s = db.scalar(select(Settings))
@@ -54,6 +73,12 @@ def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get
         "demo_day": s.demo_day,
         "weeks": weeks,
         "quiz": quiz_state(learner, s),
+        "start_date": s.start_date,
+        **schedule(s.start_date),
+        # Days with activity, for the heatmap (submissions and quizzes)
+        "activity": sorted(
+            [sub.created_at.date().isoformat() for sub in learner.submissions]
+            + [q.created_at.date().isoformat() for q in learner.quiz_attempts]),
     }
 
 

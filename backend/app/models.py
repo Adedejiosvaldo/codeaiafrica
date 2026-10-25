@@ -31,6 +31,8 @@ class Settings(Base):
     labs_required: Mapped[int] = mapped_column(Integer, default=9)
     post_quiz_open: Mapped[bool] = mapped_column(Boolean, default=False)
     demo_day: Mapped[str] = mapped_column(String(40), default="24 April 2027")
+    # Saturday of week 1, as YYYY-MM-DD. Drives "this week" and the next live session.
+    start_date: Mapped[str] = mapped_column(String(10), default="2027-02-06")
 
 
 class WaitlistEntry(Base):

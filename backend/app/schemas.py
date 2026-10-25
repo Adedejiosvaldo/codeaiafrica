@@ -88,6 +88,7 @@ class SettingsIn(BaseModel):
     labs_required: int = Field(ge=1, le=12)
     post_quiz_open: bool
     demo_day: str = Field("", max_length=40)
+    start_date: str = Field("2027-02-06", pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class SelectionIn(BaseModel):

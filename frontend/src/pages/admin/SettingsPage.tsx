@@ -66,9 +66,14 @@ export default function SettingsPage() {
             <h2 className="text-lg font-bold">Course</h2>
             <Toggle label="Final quiz is open" hint="Turn on in week 12 so learners can take the end-of-course quiz."
               checked={form.post_quiz_open} onChange={(v) => set("post_quiz_open", v)} />
-            <Field label="Demo day" htmlFor="demo_day">
-              <TextInput id="demo_day" value={form.demo_day} onChange={(e) => set("demo_day", e.target.value)} />
-            </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="First live session (week 1)" htmlFor="start_date" hint="Learners see the current week and next session from this.">
+                <TextInput id="start_date" type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} />
+              </Field>
+              <Field label="Demo day" htmlFor="demo_day" hint="Shown as written, e.g. 24 April 2027">
+                <TextInput id="demo_day" value={form.demo_day} onChange={(e) => set("demo_day", e.target.value)} />
+              </Field>
+            </div>
           </section>
           <div className="flex justify-end p-5 sm:p-6">
             <Button type="submit" loading={busy}>Save settings</Button>

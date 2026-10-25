@@ -1,250 +1,337 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import {
-  ArrowRight, Banknote, BookOpenCheck, CalendarDays, CheckCircle2, ChevronDown, FileSearch, Laptop, MessageCircle,
-  Rocket, Sparkles, Store, Users, Wifi,
+  ArrowRight, Banknote, BookOpenCheck, CalendarDays, Check, CheckCircle2, ChevronDown, Clock, Code2, FileSearch,
+  GitFork, Laptop, MessageCircle, Rocket, Star, Store, Users, Video, Wifi,
 } from "lucide-react";
 import { ApiError, api } from "../../lib/api";
 import { useApi } from "../../lib/useApi";
 import type { Week } from "../../lib/types";
 import { usePublicConfig } from "../../components/PublicLayout";
-import { Badge, Button, Card, Collapse, cx, LinkButton, TextInput } from "../../components/ui";
+import { AppMock, DashboardMock, NotebookMock, Window } from "../../components/showcase";
+import { Button, Collapse, LinkButton, TextInput, cx } from "../../components/ui";
 
 export default function Home() {
   const config = usePublicConfig();
-  const open = config?.applications_open;
+  const open = config?.applications_open ?? false;
   const places = config?.places ?? 40;
+  const starts = config?.start_date ? new Date(config.start_date + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null;
 
   return (
     <>
       {/* ---------------------------------------------------------------- hero */}
-      <section className="relative overflow-hidden">
-        <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-sun-300/25 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -left-32 top-48 h-[380px] w-[380px] rounded-full bg-brand-200/40 blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pb-24 lg:pt-20">
-          <div>
-            <div className="animate-rise">
-            <Badge tone="brand" className="mb-5 py-1 text-[13px]">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden /> Free · 12 weeks · {places} places
-            </Badge>
-            <h1 className="text-[42px] font-extrabold leading-[1.02] sm:text-6xl lg:text-[68px]">
-              Learn AI by <span className="relative whitespace-nowrap text-brand-700">building it<svg aria-hidden viewBox="0 0 200 12" className="absolute -bottom-1 left-0 h-3 w-full text-sun-300" preserveAspectRatio="none"><path d="M2 9c50-6 120-8 196-4" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" /></svg></span>.
-              <br className="hidden sm:block" /> Right in your browser.
+      <section className="relative overflow-hidden bg-[#06120c] pb-10 pt-32 text-white sm:pt-40">
+        <div aria-hidden className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgb(255_255_255/0.04)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.04)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" />
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-280px] h-[620px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(19_138_87/0.55),transparent)]" />
+        <div aria-hidden className="pointer-events-none absolute right-[-120px] top-40 h-[360px] w-[360px] rounded-full bg-[radial-gradient(closest-side,rgb(246_196_83/0.18),transparent)]" />
+
+        <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="animate-rise">
+            <LinkButton to={open ? "/apply" : "/#waitlist"} variant="ghost" size="sm" static
+              className="mx-auto h-auto gap-2 border border-white/15 bg-white/[0.06] py-1.5 pl-1.5 pr-3.5 text-[13px] font-medium text-white/80 hover:bg-white/10 hover:text-white">
+              <span className="rounded-full bg-sun-300 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-900">{open ? "Open" : "Soon"}</span>
+              {open ? `${config?.cohort_name ?? "Cohort 1"} applications are open` : "Next cohort: join the waitlist"}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </LinkButton>
+            <h1 className="mt-7 text-[44px] font-extrabold leading-[1.02] tracking-[-0.03em] sm:text-7xl lg:text-[84px]">
+              Learn AI by <span className="whitespace-nowrap">building it.</span>
             </h1>
-            </div>
-            <p className="animate-rise stagger-1 mt-6 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
-              In 12 weeks you'll build and deploy an AI tool that solves a real Nigerian problem. No fees,
-              nothing to install, and no expensive laptop needed.
-            </p>
-            <div className="animate-rise stagger-2 mt-8 flex flex-wrap gap-3">
-              <LinkButton to={open ? "/apply" : "/#waitlist"} size="lg">
-                {open ? "Apply now" : "Join the waitlist"} <ArrowRight className="h-4 w-4" aria-hidden />
-              </LinkButton>
-              <LinkButton to="/try" size="lg" variant="secondary">Train your first AI in 10 minutes</LinkButton>
-            </div>
-            {open && config?.applications_close && (
-              <p className="mt-4 text-sm font-medium text-ink-soft">Applications close {config.applications_close}.</p>
-            )}
           </div>
-          <HeroVisual />
+          <p className="animate-rise stagger-1 mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/65 sm:text-xl">
+            A free 12-week course where you go from your first line of Python to an AI tool live on the internet,
+            solving a real Nigerian problem. Nothing to install.
+          </p>
+          <div className="animate-rise stagger-2 mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <LinkButton to={open ? "/apply" : "/#waitlist"} variant="sun" size="lg" className="w-full sm:w-auto">
+              {open ? "Apply free" : "Join the waitlist"} <ArrowRight className="h-4 w-4" aria-hidden />
+            </LinkButton>
+            <LinkButton to="/try" variant="ghost" size="lg"
+              className="w-full border border-white/15 text-white hover:bg-white/10 hover:text-white sm:w-auto">
+              <Play10 /> Train an AI in 10 minutes
+            </LinkButton>
+          </div>
+          <ul className="animate-rise stagger-2 mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/55">
+            <li className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-sun-300" aria-hidden /> 12 weeks{starts ? `, from ${starts}` : ""}</li>
+            <li className="flex items-center gap-1.5"><Users className="h-4 w-4 text-sun-300" aria-hidden /> {places} places</li>
+            <li className="flex items-center gap-1.5"><Banknote className="h-4 w-4 text-sun-300" aria-hidden /> ₦0, always</li>
+            <li className="flex items-center gap-1.5"><Laptop className="h-4 w-4 text-sun-300" aria-hidden /> Runs in your browser</li>
+          </ul>
+        </div>
+
+        <div className="animate-rise stagger-3 relative mx-auto mt-16 max-w-6xl px-4 sm:px-6">
+          <Showcase />
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- facts */}
-      <section className="border-y border-line bg-card">
-        <dl className="mx-auto grid max-w-6xl grid-cols-2 divide-line px-4 sm:px-6 md:grid-cols-4 md:divide-x">
-          {[
-            ["12", "weeks, Saturday mornings"],
-            [String(places), "places in this cohort"],
-            ["₦0", "to join. It's free"],
-            ["0", "things to install"],
-          ].map(([n, l]) => (
-            <div key={l} className="px-2 py-6 md:px-6">
-              <dt className="font-display text-4xl font-bold text-brand-700">{n}</dt>
-              <dd className="mt-1 text-sm text-ink-soft">{l}</dd>
-            </div>
-          ))}
-        </dl>
+      {/* ---------------------------------------------------------------- tools */}
+      <section className="border-b border-line bg-card">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-10 sm:px-6 lg:flex-row lg:justify-between">
+          <p className="shrink-0 text-sm font-medium text-ink-soft">The same tools working AI engineers use</p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 font-display text-lg font-semibold text-ink/45 sm:text-xl">
+            {["Python", "pandas", "scikit-learn", "PyTorch", "Kaggle", "Hugging Face", "Gradio"].map((t) => <li key={t}>{t}</li>)}
+          </ul>
+        </div>
       </section>
 
       {/* ---------------------------------------------------------------- how */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <SectionTitle eyebrow="How it works" title="Real skills, the practical way" />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {[
-            { icon: CalendarDays, title: "Learn live, together", body: "A 60-minute live session every Saturday morning, plus a WhatsApp group of 40 people learning with you." },
-            { icon: BookOpenCheck, title: "Labs that check themselves", body: "Every exercise tells you PASS or gives you a hint, right away. Finish a lab and you get a completion code." },
-            { icon: Rocket, title: "Ship something real", body: "By week 11 your AI tool is live on the internet. On demo day you show it to the public, funders and employers." },
-          ].map(({ icon: Icon, title, body }) => (
-            <Card key={title} className="p-6">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700"><Icon className="h-5 w-5" aria-hidden /></span>
-              <h3 className="mt-4 text-xl font-bold">{title}</h3>
-              <p className="mt-2 leading-relaxed text-ink-soft">{body}</p>
-            </Card>
-          ))}
+      <section id="how" className="scroll-mt-24 mx-auto max-w-6xl px-4 py-24 sm:px-6">
+        <SectionTitle eyebrow="How it works" title="You learn AI the way engineers do: by shipping it" />
+        <div className="mt-14 grid gap-5 md:grid-cols-3">
+          <Feature icon={<Video className="h-5 w-5" />} kicker="Every Saturday" title="Learn live, together"
+            body="A 60-minute live session each week, then a WhatsApp group where TAs and classmates answer your questions." />
+          <Feature icon={<BookOpenCheck className="h-5 w-5" />} kicker="Hands-on labs" title="Code that checks itself"
+            body="Every exercise tells you PASS or gives a hint the moment you run it. Finish a lab, get a completion code." />
+          <Feature icon={<Rocket className="h-5 w-5" />} kicker="Week 11" title="Ship a real product"
+            body="Your capstone goes live on Hugging Face. On demo day you show it to the public, funders and employers." />
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- course */}
-      <section id="course" className="scroll-mt-20 bg-brand-900 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <SectionTitle eyebrow="The 12 weeks" title="From your first line of Python to a live AI tool" light />
-          <Curriculum />
+      {/* ---------------------------------------------------------------- path */}
+      <section id="path" className="scroll-mt-24 border-y border-line bg-card">
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <SectionTitle eyebrow="Curriculum" title="One path, twelve weeks"
+            body="Pick any week to see what you'll do. Every lab uses Nigerian data." />
+          <LearningPath />
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- capstones */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <SectionTitle eyebrow="Your capstone" title="Pick a Nigerian problem. Build the fix."
-          body="Choose one of these briefs in week 9, or bring your own idea." />
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+      {/* ---------------------------------------------------------------- projects */}
+      <section id="projects" className="scroll-mt-24 mx-auto max-w-6xl px-4 py-24 sm:px-6">
+        <SectionTitle eyebrow="Capstone" title="Pick a Nigerian problem. Ship the fix."
+          body="Choose a brief in week 9 or bring your own idea. Here's what you could build." />
+        <div className="mt-12 grid gap-4 md:grid-cols-2">
           {[
-            { icon: MessageCircle, title: "Pidgin sentiment checker", body: "Labels customer messages as positive, negative or neutral, in Pidgin or English." },
-            { icon: Store, title: "Market price agent", body: "Answers \"how has rice price changed in Kano?\" by looking up real price data." },
-            { icon: FileSearch, title: "Ask-the-law bot", body: "Answers questions about the Nigeria Data Protection Act, and shows where it found each answer." },
-            { icon: Banknote, title: "Bank alert parser", body: "Turns pasted SMS alerts into a clean monthly spending table." },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="group flex gap-4 rounded-2xl border border-transparent bg-card p-5 shadow-soft transition-[box-shadow] duration-150 ease-out hover:shadow-lift">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sun-100 text-[#8a5d00]"><Icon className="h-5 w-5" aria-hidden /></span>
-              <div>
-                <h3 className="text-lg font-bold">{title}</h3>
-                <p className="mt-1 text-ink-soft">{body}</p>
+            { icon: MessageCircle, repo: "pidgin-sentiment-checker", body: "Labels customer messages as positive, negative or neutral, in Pidgin or English.", tags: ["NLP", "LLM API"], weeks: "Weeks 5 & 7" },
+            { icon: Store, repo: "market-price-agent", body: "Answers \"how has rice price changed in Kano?\" by calling a price-lookup tool.", tags: ["Agents", "pandas"], weeks: "Weeks 3 & 10" },
+            { icon: FileSearch, repo: "ask-the-law", body: "Answers questions about the Nigeria Data Protection Act, citing the sections it used.", tags: ["RAG", "Embeddings"], weeks: "Weeks 8 & 9" },
+            { icon: Banknote, repo: "bank-alert-parser", body: "Turns pasted bank SMS alerts into a clean monthly spending table.", tags: ["LLM API", "JSON"], weeks: "Week 7" },
+          ].map(({ icon: Icon, repo, body, tags, weeks }) => (
+            <article key={repo} className="group rounded-2xl border border-transparent bg-card p-6 shadow-soft transition-[box-shadow] duration-150 ease-out hover:shadow-lift">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Icon className="h-5 w-5" aria-hidden /></span>
+                  <p className="truncate font-mono text-[15px] font-semibold text-brand-700">you/<span className="text-ink">{repo}</span></p>
+                </div>
+                <span className="hidden shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-ink-soft ring-1 ring-line sm:inline-flex">
+                  <Star className="h-3.5 w-3.5" aria-hidden /> Brief
+                </span>
               </div>
-            </div>
+              <p className="mt-4 leading-relaxed text-ink-soft">{body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-soft">
+                {tags.map((t, i) => (
+                  <span key={t} className="flex items-center gap-1.5">
+                    <span className={cx("h-2.5 w-2.5 rounded-full", i ? "bg-sun-500" : "bg-brand-500")} aria-hidden /> {t}
+                  </span>
+                ))}
+                <span className="flex items-center gap-1.5"><GitFork className="h-4 w-4" aria-hidden /> {weeks}</span>
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
       {/* ---------------------------------------------------------------- who */}
-      <section className="border-y border-line bg-card">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2">
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <div className="grid gap-10 rounded-[32px] bg-brand-50/70 p-6 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:p-14">
           <div>
-            <SectionTitle eyebrow="Who it's for" title="Curious about AI? You're who we built this for." />
+            <SectionTitle eyebrow="Who it's for" title="Never coded? Good. Start here." />
             <p className="mt-4 text-lg leading-relaxed text-ink-soft">
-              You don't need to have coded before. We pick people for commitment, not certificates.
+              We pick people for commitment, not certificates. Prior coding isn't scored, and there's no fee at any point.
             </p>
+            <LinkButton to="/try" variant="secondary" className="mt-6">Not sure? Try a 10-minute lesson <ArrowRight className="h-4 w-4" aria-hidden /></LinkButton>
           </div>
-          <ul className="space-y-3">
+          <ul className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: Users, text: "18 or older, living in Nigeria" },
-              { icon: CalendarDays, text: "Free for a 60-minute live session on Saturday mornings" },
-              { icon: BookOpenCheck, text: "About 2–4 hours a week for labs, and you'll finish 9 of the 12" },
-              { icon: Laptop, text: "A laptop helps. A shared laptop or cyber café works too" },
-              { icon: Wifi, text: "An internet connection. Wi-Fi helps for the first lab download" },
-            ].map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3.5">
-                <Icon className="h-5 w-5 shrink-0 text-brand-600" aria-hidden />
-                <span className="font-medium">{text}</span>
+              { icon: Users, title: "18 or older", text: "Living in Nigeria" },
+              { icon: CalendarDays, title: "Saturday mornings", text: "60 minutes live, for 12 weeks" },
+              { icon: Clock, title: "2–4 hours a week", text: "For labs; finish 9 of the 12" },
+              { icon: Laptop, title: "A laptop helps", text: "Shared laptop or cyber café works too" },
+              { icon: Wifi, title: "Internet access", text: "Wi-Fi helps for the first lab download" },
+              { icon: Code2, title: "No experience needed", text: "Week 2 starts from line one" },
+            ].map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex gap-3 rounded-2xl bg-card p-4 shadow-soft">
+                <Icon className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+                <span><span className="block font-semibold">{title}</span><span className="block text-sm text-ink-soft">{text}</span></span>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- cta */}
-      <section id="waitlist" className="scroll-mt-20 mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="relative overflow-hidden rounded-[28px] bg-brand-700 px-6 py-12 text-white sm:px-12 sm:py-16">
-          <div aria-hidden className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-sun-300/30 blur-2xl" />
-          <div className="relative grid items-center gap-8 lg:grid-cols-[1.2fr_1fr]">
-            <div>
-              <h2 className="text-3xl font-bold sm:text-4xl">
-                {open ? `${places} places. Free. Applications are open.` : "Be first to hear when applications open."}
-              </h2>
-              <p className="mt-3 text-lg text-white/80">
-                {open
-                  ? `The form takes 5 minutes.${config?.applications_close ? ` It closes ${config.applications_close}.` : ""}`
-                  : "Leave your email and we'll tell you the day the next cohort opens."}
-              </p>
-            </div>
-            {open ? (
-              <LinkButton to="/apply" size="lg" variant="sun" className="justify-self-start lg:justify-self-end">
-                Start your application <ArrowRight className="h-4 w-4" aria-hidden />
-              </LinkButton>
-            ) : (
-              <WaitlistForm />
-            )}
+      {/* ---------------------------------------------------------------- faq */}
+      <section id="faq" className="scroll-mt-24 border-t border-line bg-card">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[1fr_1.5fr]">
+          <div>
+            <SectionTitle eyebrow="FAQ" title="Questions, answered" />
+            <p className="mt-4 text-ink-soft">Anything else? Ask us on WhatsApp once you've applied.</p>
+          </div>
+          <div className="divide-y divide-line border-y border-line">
+            {FAQ.map(([q, a]) => <FaqItem key={q} q={q} a={a} />)}
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- faq */}
-      <section id="faq" className="scroll-mt-20 mx-auto max-w-3xl px-4 pb-24 sm:px-6">
-        <SectionTitle eyebrow="Questions" title="Things people ask" center />
-        <div className="mt-10 divide-y divide-line rounded-2xl border border-line bg-card">
-          {FAQ.map(([q, a]) => <FaqItem key={q} q={q} a={a} />)}
+      {/* ---------------------------------------------------------------- final cta */}
+      <section id="waitlist" className="scroll-mt-24 relative overflow-hidden bg-[#06120c] text-white">
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-full h-[520px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(19_138_87/0.5),transparent)]" />
+        <div className="relative mx-auto max-w-3xl px-4 py-24 text-center sm:px-6 sm:py-28">
+          <h2 className="text-4xl font-extrabold tracking-[-0.02em] sm:text-6xl">
+            {open ? "Your first AI tool is 12 weeks away." : "Be first in line for the next cohort."}
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-white/65">
+            {open
+              ? `${places} places, free. The application takes 5 minutes${config?.applications_close ? ` and closes ${config.applications_close}` : ""}.`
+              : "Leave your email and we'll tell you the day applications open."}
+          </p>
+          <div className="mx-auto mt-9 max-w-lg">
+            {open ? (
+              <LinkButton to="/apply" variant="sun" size="lg">Start your application <ArrowRight className="h-4 w-4" aria-hidden /></LinkButton>
+            ) : <WaitlistForm />}
+          </div>
         </div>
       </section>
     </>
   );
 }
 
+/* ================================================================== pieces */
+
+function Play10() {
+  return <span className="grid h-5 w-5 place-items-center rounded-full bg-white/15" aria-hidden><span className="ml-0.5 h-0 w-0 border-y-[4px] border-l-[6px] border-y-transparent border-l-white" /></span>;
+}
+
+const TABS = [
+  { key: "learn", label: "Learn", title: "Your dashboard shows exactly what's next", url: "akadalabs.org/learn", body: <DashboardMock /> },
+  { key: "practise", label: "Practise", title: "Labs run Python right in the browser", url: "akadalabs.org/lab", body: <NotebookMock /> },
+  { key: "ship", label: "Ship", title: "Your capstone goes live on the internet", url: "huggingface.co/spaces/you/pidgin-checker", body: <AppMock /> },
+] as const;
+
+function Showcase() {
+  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("learn");
+  const active = TABS.find((t) => t.key === tab)!;
+  return (
+    <div>
+      <div className="mx-auto flex w-fit gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 backdrop-blur" role="tablist" aria-label="Product tour">
+        {TABS.map((t) => (
+          <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
+            className={cx("rounded-full px-4 py-1.5 text-sm font-semibold transition-[background-color,color] duration-150",
+              tab === t.key ? "bg-white text-ink" : "text-white/65 hover:text-white")}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-center text-sm text-white/55">{active.title}</p>
+      <div className="relative mt-6">
+        <div aria-hidden className="absolute inset-x-10 -bottom-6 top-10 rounded-[28px] bg-brand-500/25 blur-3xl" />
+        <Window url={active.url} className="relative">{active.body}</Window>
+      </div>
+    </div>
+  );
+}
+
+function SectionTitle({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
+  return (
+    <div className="max-w-2xl">
+      <p className="text-sm font-semibold text-brand-600">{eyebrow}</p>
+      <h2 className="mt-2 text-[34px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-5xl">{title}</h2>
+      {body && <p className="mt-4 text-lg text-ink-soft">{body}</p>}
+    </div>
+  );
+}
+
+function Feature({ icon, kicker, title, body }: { icon: ReactNode; kicker: string; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-transparent bg-card p-6 shadow-soft">
+      <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-900 text-sun-300">{icon}</span>
+      <p className="mt-5 text-sm font-semibold text-brand-600">{kicker}</p>
+      <h3 className="mt-1 text-xl font-bold">{title}</h3>
+      <p className="mt-2 leading-relaxed text-ink-soft">{body}</p>
+    </div>
+  );
+}
+
+const PHASES = [
+  { name: "Foundations", note: "In your browser", weeks: [1, 2, 3, 4, 5] },
+  { name: "Modern AI", note: "Free GPUs on Kaggle", weeks: [6, 7, 8, 9, 10] },
+  { name: "Ship it", note: "Live on the internet", weeks: [11, 12] },
+];
+
+function LearningPath() {
+  const { data } = useApi<{ weeks: Week[] }>("/public/course");
+  const [selected, setSelected] = useState(5);
+  if (!data) return <div className="mt-12 h-[420px] animate-pulse rounded-2xl bg-paper" />;
+  const week = data.weeks.find((w) => w.week === selected)!;
+  return (
+    <div className="mt-12 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="space-y-6">
+        {PHASES.map((p, pi) => (
+          <div key={p.name}>
+            <div className="flex items-baseline gap-3">
+              <span className="font-mono text-xs font-semibold text-ink-faint">0{pi + 1}</span>
+              <h3 className="text-lg font-bold">{p.name}</h3>
+              <span className="text-sm text-ink-faint">{p.note}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+              {p.weeks.map((n) => {
+                const w = data.weeks.find((x) => x.week === n)!;
+                const on = n === selected;
+                return (
+                  <button key={n} onClick={() => setSelected(n)} aria-pressed={on}
+                    className={cx("rounded-xl border p-3 text-left transition-[border-color,background-color,box-shadow] duration-150",
+                      on ? "border-brand-600 bg-brand-900 text-white shadow-lift" : "border-line bg-paper hover:border-line-strong")}>
+                    <span className={cx("text-[11px] font-bold uppercase tracking-wider", on ? "text-sun-300" : "text-ink-faint")}>Week {n}</span>
+                    <span className="mt-1 block text-[14px] font-semibold leading-snug">{w.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="lg:sticky lg:top-28 lg:self-start">
+        <div className="rounded-2xl bg-brand-900 p-6 text-white sm:p-7" aria-live="polite">
+          <p className="text-xs font-bold uppercase tracking-wider text-sun-300">Week {week.week} · {week.phase}</p>
+          <h3 className="mt-2 text-2xl font-bold">{week.title}</h3>
+          <p className="mt-2 text-white/70">{week.summary}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
+            <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1"><Laptop className="h-3.5 w-3.5" aria-hidden /> {week.where}</span>
+            <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1"><Clock className="h-3.5 w-3.5" aria-hidden /> About {Math.round(week.minutes / 30) / 2} hours</span>
+          </div>
+          <p className="mt-6 text-sm font-semibold">You'll be able to</p>
+          <ul className="mt-3 space-y-2.5">
+            {week.objectives.map((o) => (
+              <li key={o} className="flex gap-2.5 text-[15px] text-white/85">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-sun-300" aria-hidden /> {o}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const FAQ: [string, string][] = [
-  ["Is it really free?", "Yes. No fees, no hidden costs. The tools we use all have free tiers."],
-  ["I've never written code. Can I still join?", "Yes. Week 2 starts from the very first line of Python. We don't score prior coding experience when we choose people."],
-  ["Can I do it on my phone?", "You can follow the live sessions and some labs on a phone, but labs are much easier on a laptop. A shared laptop or a cyber café is fine."],
-  ["How much data will it use?", "The first time you open the browser lab it downloads Python, which is the biggest download of the course, so use Wi-Fi if you can. After that the labs are light. Live sessions are about 60 minutes of video a week."],
-  ["What do I get at the end?", "A live AI tool you built yourself, a demo in front of a public audience, and a certificate if you complete 9 of the 12 labs."],
-  ["How are people chosen?", "We look at whether you can make the live sessions, how many hours you can give, your device, and the problem you want to solve. Specific, personal answers score best."],
+  ["Is it really free?", "Yes. No fees and no hidden costs. Every tool we use has a free tier."],
+  ["I've never written code. Can I still join?", "Yes. Week 2 starts from the very first line of Python, and we don't score prior coding experience when we choose people."],
+  ["Can I do it on my phone?", "You can join live sessions and some labs on a phone, but labs are much easier on a laptop. A shared laptop or a cyber café is fine."],
+  ["How much data will it use?", "The first time you open the browser lab it downloads Python, the biggest download of the course, so use Wi-Fi if you can. After that labs are light. Live sessions are about 60 minutes of video a week."],
+  ["What do I get at the end?", "A live AI tool you built yourself, a demo in front of a public audience, and a certificate when you complete 9 of the 12 labs."],
+  ["How are people chosen?", "We look at whether you can make the live sessions, the hours you can give, your device, and the problem you want to solve. Specific, personal answers score best."],
 ];
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div>
-      <button className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-[17px] font-semibold"
+      <button className="flex w-full items-center justify-between gap-4 py-5 text-left text-[17px] font-semibold"
         onClick={() => setOpen(!open)} aria-expanded={open}>
         {q}
-        <ChevronDown className={cx("h-5 w-5 shrink-0 text-ink-faint motion-safe:transition-[rotate] motion-safe:duration-150 motion-safe:ease-out", open && "rotate-180")} aria-hidden />
+        <span className={cx("grid h-8 w-8 shrink-0 place-items-center rounded-full transition-[background-color,color] duration-150", open ? "bg-brand-900 text-white" : "bg-paper text-ink-soft")}>
+          <ChevronDown className={cx("h-4 w-4 motion-safe:transition-[rotate] motion-safe:duration-150 motion-safe:ease-out", open && "rotate-180")} aria-hidden />
+        </span>
       </button>
-      <Collapse open={open}><p className="px-5 pb-5 leading-relaxed text-ink-soft">{a}</p></Collapse>
-    </div>
-  );
-}
-
-function SectionTitle({ eyebrow, title, body, light, center }:
-  { eyebrow: string; title: string; body?: string; light?: boolean; center?: boolean }) {
-  return (
-    <div className={cx("max-w-2xl", center && "mx-auto text-center")}>
-      <p className={cx("text-sm font-bold uppercase tracking-[0.14em]", light ? "text-sun-300" : "text-brand-600")}>{eyebrow}</p>
-      <h2 className="mt-3 text-3xl font-bold leading-tight sm:text-[40px]">{title}</h2>
-      {body && <p className={cx("mt-3 text-lg", light ? "text-white/75" : "text-ink-soft")}>{body}</p>}
-    </div>
-  );
-}
-
-const PHASES = [
-  { name: "Foundations", weeks: [1, 2, 3, 4, 5], note: "In your browser" },
-  { name: "Modern AI", weeks: [6, 7, 8, 9, 10], note: "On Kaggle or Colab, free GPUs" },
-  { name: "Ship it", weeks: [11, 12], note: "Live on the internet" },
-];
-
-function Curriculum() {
-  const { data } = useApi<{ weeks: Week[] }>("/public/course");
-  if (!data) return <div className="mt-10 h-96 animate-pulse rounded-2xl bg-white/5" />;
-  const byWeek = Object.fromEntries(data.weeks.map((w) => [w.week, w]));
-  return (
-    <div className="mt-12 space-y-10">
-      {PHASES.map((p) => (
-        <div key={p.name}>
-          <div className="mb-4 flex items-baseline gap-3">
-            <h3 className="text-xl font-bold">{p.name}</h3>
-            <span className="text-sm text-white/60">{p.note}</span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {p.weeks.map((n) => {
-              const w = byWeek[n];
-              return (
-                <div key={n} className={cx("rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:bg-white/[0.08]",
-                  n === 5 && "ring-1 ring-sun-300/50")}>
-                  <p className="text-xs font-bold uppercase tracking-wider text-sun-300">Week {n}</p>
-                  <p className="mt-1.5 font-display text-lg font-semibold leading-snug">{w.title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-white/65">{w.summary}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      <Collapse open={open}><p className="pb-5 pr-12 leading-relaxed text-ink-soft">{a}</p></Collapse>
     </div>
   );
 }
@@ -267,66 +354,23 @@ function WaitlistForm() {
 
   if (state.status === "done") {
     return (
-      <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-5">
+      <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/10 p-5">
         <CheckCircle2 className="h-6 w-6 shrink-0 text-sun-300" aria-hidden />
         <p className="font-medium">{state.message}</p>
       </div>
     );
   }
   return (
-    <form onSubmit={submit} className="space-y-2" noValidate>
-      <div className="flex flex-col gap-2 sm:flex-row">
+    <form onSubmit={submit} noValidate>
+      <div className="flex flex-col gap-2 rounded-full sm:flex-row sm:bg-white/10 sm:p-1.5">
         <label htmlFor="wl-email" className="sr-only">Email address</label>
         <TextInput id="wl-email" type="email" required placeholder="you@example.com" value={email}
-          onChange={(e) => setEmail(e.target.value)} className="border-transparent sm:flex-1" autoComplete="email" />
-        <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)}
-          className="hidden" aria-hidden />
-        <Button type="submit" variant="sun" size="lg" loading={state.status === "busy"}>Join the waitlist</Button>
+          onChange={(e) => setEmail(e.target.value)} autoComplete="email"
+          className="rounded-full border-transparent sm:h-11 sm:flex-1 sm:bg-transparent sm:text-white sm:placeholder:text-white/45 sm:focus:ring-0" />
+        <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} className="hidden" aria-hidden />
+        <Button type="submit" variant="sun" size="lg" className="sm:h-11" loading={state.status === "busy"}>Notify me</Button>
       </div>
-      {state.status === "error" && <p className="text-sm font-medium text-sun-100" role="alert">{state.message}</p>}
+      {state.status === "error" && <p className="mt-3 text-sm font-medium text-sun-100" role="alert">{state.message}</p>}
     </form>
-  );
-}
-
-function HeroVisual() {
-  return (
-    <div className="animate-rise stagger-3 relative mx-auto w-full max-w-md lg:max-w-none">
-      <Card className="overflow-hidden shadow-lift">
-        <div className="flex items-center gap-1.5 border-b border-line bg-paper px-4 py-3">
-          <span className="h-3 w-3 rounded-full bg-clay-500/70" />
-          <span className="h-3 w-3 rounded-full bg-sun-300" />
-          <span className="h-3 w-3 rounded-full bg-brand-500/70" />
-          <span className="ml-3 truncate text-xs font-medium text-ink-faint">week02-python-in-the-browser.ipynb</span>
-        </div>
-        <div className="space-y-3 p-4 font-mono text-[13px] leading-relaxed">
-          <p className="font-sans text-sm font-semibold text-ink">Exercise 4: Write a function</p>
-          <div className="whitespace-pre rounded-xl bg-paper p-3.5">
-            <span className="text-brand-700">def</span> <span className="text-[#7a5300]">air_label</span>(pm25):
-            <br />{"    "}<span className="text-brand-700">if</span> pm25 &gt; 35:
-            <br />{"        "}<span className="text-brand-700">return</span> <span className="text-clay-700">"poor"</span>
-            <br />{"    "}<span className="text-brand-700">return</span> <span className="text-clay-700">"good"</span>
-          </div>
-          <div className="rounded-xl border border-line p-3.5">
-            <span className="text-ink-faint">check.week2.check_4(air_label)</span>
-            <div className="mt-1.5 flex items-center gap-1.5 font-sans text-sm font-semibold text-brand-700">
-              <CheckCircle2 className="h-4 w-4" aria-hidden /> PASS: exercise 4 done.
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl bg-paper p-3.5 font-sans">
-            <div className="flex-1">
-              <div className="flex justify-between text-xs font-medium text-ink-soft"><span>This lab</span><span>4 of 5</span></div>
-              <div className="mt-1.5 h-2 rounded-full bg-line"><div className="h-2 w-4/5 rounded-full bg-brand-500" /></div>
-            </div>
-          </div>
-        </div>
-      </Card>
-      <Card className="absolute -bottom-6 -left-4 hidden items-center gap-3 px-4 py-3 shadow-lift sm:flex">
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-sun-100 text-[#8a5d00]"><Sparkles className="h-5 w-5" aria-hidden /></span>
-        <div>
-          <p className="text-sm font-bold">Real Lagos sensor data</p>
-          <p className="text-xs text-ink-soft">Every lab uses Nigerian datasets</p>
-        </div>
-      </Card>
-    </div>
   );
 }

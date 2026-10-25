@@ -34,8 +34,27 @@ def friendly_errors(_request: Request, exc: RequestValidationError):
     return JSONResponse({"detail": f"{label}: {first[1]}" if first[0] else first[1], "errors": errors}, 422)
 
 
+def add_missing_columns(engine):
+    """Add columns introduced after a database was created. A stopgap until Alembic."""
+    from sqlalchemy import inspect, text
+    from .db import Base
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not inspector.has_table(table.name):
+                continue
+            have = {c["name"] for c in inspector.get_columns(table.name)}
+            for col in table.columns:
+                if col.name not in have and col.default is not None and not callable(col.default.arg):
+                    kind = col.type.compile(engine.dialect)
+                    default = col.default.arg
+                    literal = f"'{default}'" if isinstance(default, str) else str(int(default)) if isinstance(default, bool) else str(default)
+                    conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN {col.name} {kind} DEFAULT {literal}'))
+
+
 def bootstrap(db, cfg):
     db.create_all()
+    add_missing_columns(db.engine)
     with db.Session() as s:
         if s.scalar(select(Settings)) is None:
             s.add(Settings())

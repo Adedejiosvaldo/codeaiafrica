@@ -24,6 +24,7 @@ def public_config(db: Session = Depends(get_db)):
         "places": s.cap,
         "labs_required": s.labs_required,
         "demo_day": s.demo_day,
+        "start_date": s.start_date,
     }
 
 

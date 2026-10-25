@@ -7,6 +7,7 @@ export interface PublicConfig {
   places: number;
   labs_required: number;
   demo_day: string;
+  start_date: string;
 }
 
 export interface Week {
@@ -17,6 +18,9 @@ export interface Week {
   summary: string;
   prompt?: string;
   notebook?: string;
+  minutes: number;
+  objectives: string[];
+  phase: "Foundations" | "Modern AI" | "Ship it";
 }
 
 export interface LearnerWeek extends Week {
@@ -42,6 +46,11 @@ export interface LearnerDashboard {
   demo_day: string;
   weeks: LearnerWeek[];
   quiz: { pre: QuizPhaseState; post: QuizPhaseState };
+  start_date: string;
+  current_week: number;
+  next_session: string | null;
+  next_session_week: number | null;
+  activity: string[];
 }
 
 export interface Quiz {
@@ -138,4 +147,5 @@ export interface SettingsData {
   labs_required: number;
   post_quiz_open: boolean;
   demo_day: string;
+  start_date: string;
 }

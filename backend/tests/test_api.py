@@ -190,3 +190,39 @@ def test_stats_and_exports(client, admin, open_applications):
     csv_text = admin.get("/api/admin/export/learners.csv").text
     assert "Ngozi Okafor" in csv_text and "/learn/" in csv_text
     assert "Own laptop" in admin.get("/api/admin/export/applications.csv").text
+
+
+def test_schedule_weeks_and_sessions():
+    from datetime import date
+    from app.routers.learner import schedule
+    assert schedule("2027-02-06", date(2027, 2, 1)) == {"current_week": 0, "next_session": "2027-02-06", "next_session_week": 1}
+    assert schedule("2027-02-06", date(2027, 2, 6))["current_week"] == 1
+    mid = schedule("2027-02-06", date(2027, 3, 1))
+    assert mid["current_week"] == 4 and mid["next_session"] == "2027-03-06" and mid["next_session_week"] == 5
+    after = schedule("2027-02-06", date(2027, 6, 1))
+    assert after["current_week"] == 13 and after["next_session"] is None
+
+
+def test_dashboard_has_objectives_and_activity(client, admin, open_applications):
+    token, _ = accept(client, admin)
+    client.post(f"/api/learner/{token}/submissions", json={"week": 2, "value": make_code("ngozi@example.com", 2)})
+    me = client.get(f"/api/learner/{token}").json()
+    assert len(me["weeks"][1]["objectives"]) == 4 and me["weeks"][0]["phase"] == "Foundations"
+    assert len(me["activity"]) == 1 and "current_week" in me
+
+
+def test_old_database_gets_new_columns(tmp_path):
+    import sqlite3
+    from app.config import Config
+    from app.main import create_app
+    db = tmp_path / "old.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE settings (id INTEGER PRIMARY KEY, cohort_name VARCHAR(120), applications_open BOOLEAN, "
+                "applications_close VARCHAR(40), cap INTEGER, waitlist_size INTEGER, labs_required INTEGER, "
+                "post_quiz_open BOOLEAN, demo_day VARCHAR(40))")
+    con.execute("INSERT INTO settings VALUES (1, 'C1', 0, '', 40, 10, 9, 0, 'x')")
+    con.commit()
+    con.close()
+    app = create_app(Config(database_url=f"sqlite:///{db}", secret_key="t", frontend_dist=tmp_path / "none"))
+    from fastapi.testclient import TestClient
+    assert TestClient(app).get("/api/public/config").json()["start_date"] == "2027-02-06"
