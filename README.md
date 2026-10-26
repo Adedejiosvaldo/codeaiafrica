@@ -1,132 +1,134 @@
-# Akada Labs: Phase 1 build
+# Akada Labs
 
-Course materials for Akada Labs' free 12-week practical AI course for Nigerian beginners.
-The full plan is in [`docs/build-specs.md`](docs/build-specs.md).
+The platform and course materials for Akada Labs, a free 12-week practical AI course for Nigerian beginners.
+The original plan is in [`docs/build-specs.md`](docs/build-specs.md). To put it online, follow
+[`deploy/DEPLOY.md`](deploy/DEPLOY.md).
 
 ## What's here
 
 | Folder | What it is |
 | --- | --- |
-| `backend/` | The web app's API (FastAPI + SQLite): waitlist, applications, selection, learner progress, quiz, team accounts |
-| `frontend/` | The web app's interface (React + TypeScript + Tailwind): public site, application form, learner dashboard, team dashboard |
-| `lead-magnet/` | "Train your first AI in 10 minutes": one web page that walks someone through Teachable Machine, explains what happened, and points to the waitlist |
-| `lab/` | The browser lab (JupyterLite): weeks 2-5 notebooks that run Python in the browser with nothing installed |
-| `lab/content/data/` | The trimmed CSVs for weeks 2-5 (see the README there for sources and licences) |
-| `kaggle/` | Weeks 6-10 starter notebooks for Kaggle or Colab |
+| `backend/` | The API (FastAPI + SQLite + Alembic): applications, selection, learners, labs, AI proxy, email, certificates |
+| `frontend/` | The website (React + TypeScript + Tailwind): public site, application form, learner area, interactive labs, team dashboard |
+| `deploy/` | Caddy config, backup script and the step-by-step VPS guide; `docker-compose.yml` is at the root |
+| `lab/` | The browser lab (JupyterLite): weeks 2-5 notebooks, served by the app at `/lab/` |
+| `kaggle/` | Weeks 6-10 notebooks for Kaggle or Colab (week 6 part 2 needs Kaggle's free GPU) |
 | `ship-it/` | Week 11 starter: a Gradio app to deploy on Hugging Face Spaces |
-| `scripts/` | Trim the raw datasets, score applications, verify completion codes |
-| `tests/` | Run every notebook with model answers and check each self-check passes |
+| `scripts/` | Trim the raw datasets, score a CSV of applications, verify completion codes |
+| `lead-magnet/` | A standalone copy of "Train your first AI" (the app has its own at `/try`) |
+| `tests/` | Notebook tests: run every notebook with model answers |
 
-The site workflow publishes the lead magnet at `/` and the browser lab at `/lab/` on GitHub Pages.
+## The platform
 
-## The web app
+**Public site**
+- Landing page with a product tour, the 12-week curriculum, capstone ideas and FAQ.
+- "Train your first AI in 10 minutes" at `/try`.
+- Waitlist, and a 4-step application form with a consent checkbox and a privacy notice (`/privacy`, written for the NDPA 2023).
+- `/find-my-link`: emails learners their dashboard link, or applicants their status.
+- `/demo-day` (agenda and registration), `/showcase` (learners' projects, opt-in), `/verify` (check a certificate).
 
-One app runs the whole programme:
+**Learner area** (each accepted learner gets a private link, `/learn/<token>`)
+- Home: continue learning, labs done, streak, quiz score, certificate progress, activity heatmap, next live
+  session with a Join button, and announcements.
+- Learning path, and a page per week with goals, steps, submission (completion code or link) and a reflection
+  that a TA replies to. Week 9 has the capstone picker.
+- Interactive labs (below), the week 1 and week 12 knowledge check, and a printable certificate.
 
-- **Public site**: home page, the 10-minute "Train your first AI" guide, a waitlist, and a 4-step application form.
-- **Learner dashboard**: each accepted learner gets a private link (`/learn/<token>`). They see their 12 weeks,
-  open each lab, submit completion codes (checked against their email) or links, and take the week 1 and week 12 quiz.
-- **Team dashboard** (`/admin`): overview charts, application review with one-tap 0–3 scoring for the problem
-  question (the rest of the rubric is scored automatically), selection preview and apply (places, then the waitlist),
-  a learner progress grid with copyable links, the waitlist, settings, team accounts, and CSV exports.
+**Team dashboard** (`/admin`)
+- Overview, applications (score the problem answer 0-3; the rest of the rubric is automatic), selection
+  (places, then waitlist), learners grid, feedback on reflections, attendance, waitlist, messages and
+  announcements, demo day guests, AI usage, settings, team accounts and an activity log.
+- Two roles: **admins** do everything; **TAs** review, score, give feedback and take attendance.
+- CSV exports, and deleting a person's data on request.
 
-### Interactive labs
+## Interactive labs
 
-Weeks with an interactive lab (week 2 so far) open a split screen at `/learn/<token>/lab/<week>`: step-by-step
-instructions on the left, a Python editor and output on the right. Python runs in the learner's browser with
-[Pyodide](https://pyodide.org), so there is nothing to host and nothing to install. On phones the two halves become tabs.
+Weeks 2 and 6-10 have interactive labs at `/learn/<token>/lab/<week>`: step-by-step instructions on the left, a
+Python editor and output on the right (tabs on phones). Python runs in the learner's browser with
+[Pyodide](https://pyodide.org), in a background worker, so a stuck loop never freezes the page.
 
-- Each step explains an idea, shows an example, and sets a task. **Check** runs the learner's code, then a hidden
-  check that either passes or explains what's missing. A hint is always available; the worked solution unlocks after two checks.
-- Passing every step marks the week as submitted, so learners don't need a completion code for these weeks.
-- Pyodide's core files (about 12 MB, compressed by most hosts) are served from the app at `/pyodide/`; extra
-  packages such as pandas download from the Pyodide CDN on first use. Override with `VITE_PYODIDE_URL` and
-  `VITE_PYODIDE_PACKAGES_URL` at build time.
+- Each step explains an idea, shows an example and sets a task. **Check** runs a hidden test that passes or says what
+  to fix. A hint is always available; the worked solution unlocks after two checks.
+- Passing every step submits the week. Week 6's lab is part 1 only; its Kaggle notebook (part 2) submits the week.
+- Labs for weeks 7-10 call AI models through the server with the `akada` helper module:
 
-To add a lab, add a dictionary like `WEEK2` in `backend/app/labs.py` and register it in `LABS`. Each step needs
-`id`, `title`, `body` (simple Markdown), `task`, `starter`, `check`, `hint` and `solution`. A check is Python that runs
-after the learner's code in the same session and raises `AssertionError("what to fix")` when the step isn't done; it can
-read `__output__` (what the code printed) and `__code__` (what they wrote). `backend/tests/test_labs.py` runs every
-solution against its check and makes sure every starter fails, so run the tests after editing a lab.
+  ```python
+  from akada import ask, chat, embed, chunk, usage, AIError
+  ```
 
-### Run it on your computer
+  The API key stays on the server. Each learner has a daily limit, the class has a daily budget, and identical
+  requests on the same day are answered from a cache for free (so re-runs and replays don't use up calls).
+- `chunk` uses the [RAG Document Chunker](https://github.com/Adedejiosvaldo/rag-chunker), which runs next to the app.
 
-    # API, on port 8000
-    cd backend
-    python -m venv .venv && . .venv/bin/activate
-    pip install -r requirements-dev.txt
-    ADMIN_EMAIL=you@example.org ADMIN_PASSWORD='choose-a-password' uvicorn app.main:app --reload
+**Adding or editing a lab:** labs live in `backend/app/labs.py` and `backend/app/labcontent/`. Each step has
+`id`, `title`, `body` (simple Markdown), `task`, `starter`, `check`, `hint` and `solution`. A check is Python that
+runs after the learner's code in the same session and raises `AssertionError("what to fix")` when the step isn't
+done; it can read `__output__` (what was printed) and `__code__` (what they wrote). `backend/tests/test_labs.py`
+runs every solution against its check and makes sure every starter fails, so run the tests after editing.
 
-    # Interface, on port 5173 (in a second terminal)
-    cd frontend
-    npm install
-    npm run dev
+## Running it on your computer
 
-Open http://localhost:5173, and sign in at /admin with the email and password above.
-To try it with sample data, run `python -m app.cli seed-demo` in `backend/` on an empty database
-(it uses example.com addresses). Run the API tests with `python -m pytest tests` in `backend/`.
+```bash
+# API, on port 8000
+cd backend
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m app.cli migrate
+ADMIN_EMAIL=you@example.org ADMIN_PASSWORD='choose-a-password' uvicorn app.main:app --reload
 
-### Deploy
+# Website, on port 5173 (second terminal)
+cd frontend
+npm install
+npm run dev
+```
 
-The `Dockerfile` builds the interface and serves it together with the API on port 8000. Set:
+Open http://localhost:5173 and sign in at `/admin`. For sample data, run `python -m app.cli seed-demo` on an
+empty database (it uses example.com addresses).
 
-| Variable | What it's for |
-| --- | --- |
-| `SECRET_KEY` | Required. A long random string that signs team sessions |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Creates the first team account on first start. Change the password after signing in |
-| `PUBLIC_URL` | The site address, used for learner links in the CSV export |
-| `DATABASE_URL` | Defaults to SQLite at `/data/akada.db`; mount a volume at `/data` so it survives restarts |
+To try the AI labs without a real key, run the fake provider (`python tests/fake_provider.py 9000` in `backend/`)
+and start the API with `AI_BASE_URL=http://127.0.0.1:9000/v1 AI_API_KEY=x EMBED_BASE_URL=http://127.0.0.1:9000/v1
+EMBED_MODEL=fake-embed EMBED_API_KEY=x`. For chunking, run the chunker (`go run ./cmd/api` in its repo) and set
+`CHUNKER_URL=http://127.0.0.1:8080`.
 
-Any host that runs a container works (Render, Railway, Fly.io, a VPS). The database tables are created on
-first start; there are no migrations yet, so add Alembic before changing the models once real data is in.
+### Changing the database
 
-Frontend settings (at build time): `VITE_LAB_URL` (where the browser lab lives, default `/lab`) and
-`VITE_NOTEBOOK_REPO` (GitHub repo for "Open in Colab" links, default `Adedejiosvaldo/codeaiafrica`).
+Models are in `backend/app/models.py`. After changing them:
+
+```bash
+cd backend
+alembic revision --autogenerate -m "describe the change"
+python -m app.cli migrate
+```
+
+The Docker image runs `migrate` on every start. A test fails if the models and migrations disagree.
+
+## Tests
+
+| What | Command | Covers |
+| --- | --- | --- |
+| API | `cd backend && python -m pytest tests` | Every endpoint, roles, limits, email, AI proxy (fake provider), migrations, and every lab's solutions and starters |
+| Browser | `cd frontend && npm run build && npm run e2e` | Apply, admin review, a Python lab step, an AI call, the phone layout (set `E2E_PYTHON` to your backend Python) |
+| Notebooks | `python -m pytest tests` (repo root) | Runs every notebook with model answers |
+
+All three run in GitHub Actions.
 
 ## How the notebooks work
 
-Every exercise has a cell for the learner's code and a check cell that prints **PASS** or a hint.
-Checks work out the expected answer from the data, so refreshing a CSV doesn't break them.
-When every exercise has passed, the last cell prints a completion code such as `AK-W04-3F9A1C`,
-made from the learner's email and the week. Learners paste it into the submission form; check codes with:
+Every exercise has a cell for the learner's code and a check cell that prints **PASS** or a hint. When every
+exercise has passed, the last cell prints a completion code such as `AK-W04-3F9A1C`, made from the learner's email
+and the week. Learners submit it on their week page, where it's checked against their email. Codes and lab checks
+are an honesty system: a determined learner could read the code that makes them.
 
-    python scripts/verify_completion_code.py submissions.csv
+## Still to do before launch
 
-This is an honesty system: a determined learner could read the code that makes it.
+1. **Add the data.** Download the raw datasets (links in `lab/content/data/README.md`) into `raw/`, then run the
+   trim scripts in `scripts/` (each writes into `lab/content/data/` and lists the columns if it can't find one).
+   Read a sample of the NaijaSenti split by eye.
+2. **Run weeks 3-5 in the browser lab** on the real data, and time week 5 (if slow, `trim_naijasenti.py --per-variety 500`).
+3. **Set up Kaggle** for week 6 part 2: see `kaggle/README.md`.
+4. **Deploy** with `deploy/DEPLOY.md`, then fill in Settings: dates, live session link, privacy contact email.
+5. **Check the defaults:** the privacy notice's retention periods, the AI limits in `.env`, and the course handbook
+   text used in weeks 8-9 (`backend/app/labcontent/handbook.py`).
+6. **Pin the chunker** to a release tag in `docker-compose.yml` once one exists.
 
-## To do before launch
-
-1. **Add the data.** Download the raw datasets (links in `lab/content/data/README.md`) into a `raw/` folder, then:
-
-       pip install -r requirements-dev.txt
-       cd scripts
-       python trim_air_quality.py ../raw/<lagos file>.csv
-       python trim_food_prices.py ../raw/<world bank file>.csv --list   # see the column names first
-       python trim_food_prices.py ../raw/<world bank file>.csv
-       python trim_lagos_rent.py ../raw/<rent file>.csv
-       python trim_naijasenti.py ../raw/pcm_train.tsv ../raw/pcm_dev.tsv ../raw/pcm_test.tsv
-
-   Each script writes into `lab/content/data/`. If it can't find a column, it stops and lists the columns in the file.
-   Read a sample of the NaijaSenti split by eye: it sorts Pidgin tweets into "english_like" and "pidgin" by word lists.
-2. **Run each notebook once on the real data**, in the browser lab, and check the exercise numbers still make sense
-   (for example, that week 4 clears the 60% accuracy floor and week 5 shows a Pidgin gap).
-3. **Time week 5 in the browser.** The spec asks for a Pyodide speed check on 4,000 tweets; if training is slow,
-   rerun `trim_naijasenti.py --per-variety 500`.
-4. **Set up the Kaggle side**: see `kaggle/README.md`.
-5. **Fill in the lead magnet settings** at the bottom of `lead-magnet/index.html` (waitlist link, social handle,
-   demo video), and test it on a mid-range Android phone.
-6. **Turn on GitHub Pages** (Settings > Pages > Source: GitHub Actions).
-
-## Running the tests
-
-    pip install -r requirements-dev.txt
-    python -m pytest tests
-
-The tests use small random files from `tests/make_fixtures.py`. These are test data only and never ship to learners.
-Model answers live in `tests/solutions/`; if this repo is public, learners can find them.
-
-## Applications
-
-Export the Google Form responses as CSV, add a `q9_score` column (0-3, scored by a reviewer), then:
-
-    python scripts/score_applications.py responses.csv --cap 40
+Model answers live in `tests/solutions/` and `backend/app/labcontent/`; if this repo is public, learners can find them.

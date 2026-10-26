@@ -49,11 +49,19 @@ def add_missing_columns(engine):
                 continue
             have = {c["name"] for c in inspector.get_columns(table.name)}
             for col in table.columns:
-                if col.name not in have and col.default is not None and not callable(col.default.arg):
-                    kind = col.type.compile(engine.dialect)
-                    default = col.default.arg
+                if col.name in have:
+                    continue
+                kind = col.type.compile(engine.dialect)
+                default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
+                if default is not None:
                     literal = f"'{default}'" if isinstance(default, str) else str(int(default)) if isinstance(default, bool) else str(default)
-                    conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN {col.name} {kind} DEFAULT {literal}'))
+                    conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {col.name} {kind} DEFAULT {literal}"))
+                elif col.nullable:
+                    conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {col.name} {kind}"))
+                else:
+                    continue  # a required column with no default can't be added to existing rows
+                if col.unique:  # SQLite can't add a UNIQUE column, so add a unique index instead
+                    conn.execute(text(f"CREATE UNIQUE INDEX IF NOT EXISTS uq_{table.name}_{col.name} ON {table.name} ({col.name})"))
 
 
 def bootstrap(db, cfg):

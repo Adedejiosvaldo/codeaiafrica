@@ -13,3 +13,5 @@ backend/*.db
 *.tsbuildinfo
 .env
 backups/
+frontend/test-results/
+frontend/playwright-report/
