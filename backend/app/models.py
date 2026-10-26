@@ -37,6 +37,9 @@ class Settings(Base):
     start_date: Mapped[str] = mapped_column(String(10), default="2027-02-06")
     # Where people send privacy and data requests; shown on the privacy page
     contact_email: Mapped[str] = mapped_column(String(254), default="")
+    # Live sessions: the video call link and the usual time, shown to learners
+    session_link: Mapped[str] = mapped_column(String(500), default="")
+    session_time: Mapped[str] = mapped_column(String(40), default="10:00 WAT")
 
 
 class WaitlistEntry(Base):
@@ -72,6 +75,8 @@ class Application(Base):
     reviewer_note: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|accepted|waitlisted|rejected
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # The decision we last emailed them about, so decision emails are only sent once per change
+    notified_status: Mapped[str] = mapped_column(String(20), default="")
 
     learner: Mapped["Learner | None"] = relationship(back_populates="application")
 
@@ -163,3 +168,13 @@ class AICache(Base):
     key: Mapped[str] = mapped_column(String(64))
     day: Mapped[str] = mapped_column(String(10))
     response: Mapped[dict] = mapped_column(JSON)
+
+
+class Announcement(Base):
+    """A message the team posts to every learner's dashboard."""
+    __tablename__ = "announcements"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(160))
+    body: Mapped[str] = mapped_column(Text)
+    author: Mapped[str] = mapped_column(String(254))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

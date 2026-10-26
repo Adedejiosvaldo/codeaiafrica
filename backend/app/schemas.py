@@ -98,6 +98,8 @@ class SettingsIn(BaseModel):
     demo_day: str = Field("", max_length=40)
     start_date: str = Field("2027-02-06", pattern=r"^\d{4}-\d{2}-\d{2}$")
     contact_email: str = Field("", max_length=254)
+    session_link: str = Field("", max_length=500)
+    session_time: str = Field("", max_length=40)
 
 
 class SelectionIn(BaseModel):

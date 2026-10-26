@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import course, labs
 from ..codes import check_code
-from ..models import LabStep, Learner, QuizAttempt, Settings, Submission, now
+from ..models import Announcement, LabStep, Learner, QuizAttempt, Settings, Submission, now
 from ..schemas import QuizIn, SubmissionIn
 from ..ratelimit import limit
 from ..security import get_db
@@ -76,6 +76,10 @@ def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get
         "weeks": weeks,
         "quiz": quiz_state(learner, s),
         "start_date": s.start_date,
+        "session_link": s.session_link,
+        "session_time": s.session_time,
+        "announcements": [{"id": a.id, "title": a.title, "body": a.body, "author": a.author, "created_at": a.created_at}
+                          for a in db.scalars(select(Announcement).order_by(Announcement.created_at.desc()).limit(5))],
         **schedule(s.start_date),
         # Days with activity, for the heatmap (submissions and quizzes)
         "activity": sorted(

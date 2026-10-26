@@ -7,6 +7,7 @@ import Try from "./pages/public/Try";
 import Apply from "./pages/public/Apply";
 import NotFound from "./pages/public/NotFound";
 import Privacy from "./pages/public/Privacy";
+import FindLink from "./pages/public/FindLink";
 import LearnerLayout from "./components/LearnerLayout";
 import LearnerHome from "./pages/learn/LearnerHome";
 import LearnerPath from "./pages/learn/LearnerPath";
@@ -25,6 +26,7 @@ import Learners from "./pages/admin/Learners";
 import Waitlist from "./pages/admin/Waitlist";
 import SettingsPage from "./pages/admin/SettingsPage";
 import AIUsage from "./pages/admin/AIUsage";
+import Messages from "./pages/admin/Messages";
 
 export default function App() {
   return (
@@ -34,6 +36,7 @@ export default function App() {
         <Route path="try" element={<Try />} />
         <Route path="apply" element={<Apply />} />
         <Route path="privacy" element={<Privacy />} />
+        <Route path="find-my-link" element={<FindLink />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="learn/:token/quiz/:phase" element={<QuizPage />} />
@@ -52,6 +55,7 @@ export default function App() {
         <Route path="learners" element={<Learners />} />
         <Route path="waitlist" element={<Waitlist />} />
         <Route path="ai" element={<AIUsage />} />
+        <Route path="messages" element={<Messages />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

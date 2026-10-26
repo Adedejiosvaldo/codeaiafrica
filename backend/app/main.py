@@ -8,8 +8,9 @@ from sqlalchemy import select
 from .config import Config, config as default_config
 from .db import Database
 from .models import AdminUser, Settings
-from .routers import admin, ai, learner, public
+from .routers import admin, ai, learner, messages, public
 from .services import make_client
+from .mailer import SMTPMailer
 from .ratelimit import RateLimiter
 from .security import hash_password
 
@@ -86,6 +87,7 @@ def create_app(cfg: Config | None = None):
     app.state.db = Database(cfg.database_url)
     app.state.limiter = RateLimiter()
     app.state.http = make_client()
+    app.state.mailer = SMTPMailer(cfg)
     bootstrap(app.state.db, cfg)
 
     # Compress responses: the in-browser Python download shrinks by about two thirds
@@ -94,6 +96,8 @@ def create_app(cfg: Config | None = None):
     app.include_router(public.router)
     app.include_router(learner.router)
     app.include_router(ai.router)
+    app.include_router(messages.router)
+    app.include_router(messages.public)
     app.include_router(admin.auth)
     app.include_router(admin.router)
 

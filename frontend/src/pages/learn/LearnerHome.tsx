@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, BookOpen, CalendarDays, ChevronRight, ClipboardList, Clock, Flame, Laptop, Trophy } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Award, BookOpen, CalendarDays, ChevronRight, ClipboardList, Clock, Flame, Laptop, Megaphone, Trophy, Video } from "lucide-react";
 import { useLearner } from "../../components/LearnerLayout";
 import { Heatmap, STATUS_LABEL, StatusDot } from "../../components/learner-widgets";
 import { AButton, Badge, Card, LinkButton, ProgressRing, cx } from "../../components/ui";
@@ -28,6 +29,8 @@ export default function LearnerHome() {
         <h1 className="text-[30px] font-bold leading-tight sm:text-4xl">{greeting()}, {data.first_name}</h1>
         <p className="mt-1 text-ink-soft">{subline}</p>
       </div>
+
+      {data.announcements.length > 0 && <Announcements items={data.announcements} />}
 
       {/* Continue learning */}
       {up ? (
@@ -97,15 +100,22 @@ export default function LearnerHome() {
               <div>
                 <p className="text-sm font-medium text-ink-soft">Next live session</p>
                 <p className="mt-1 text-lg font-bold">{data.next_session ? prettyDate(data.next_session, { weekday: "long", day: "numeric", month: "long" }) : "No more sessions"}</p>
-                {data.next_session_week && <p className="text-sm text-ink-soft">Week {data.next_session_week}, 60 minutes, online</p>}
+                {data.next_session_week && <p className="text-sm text-ink-soft">Week {data.next_session_week}{data.session_time ? `, ${data.session_time}` : ""}, 60 minutes, online</p>}
               </div>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><CalendarDays className="h-5 w-5" aria-hidden /></span>
             </div>
-            {until !== null && (
-              <p className={cx("mt-4 inline-flex rounded-full px-3 py-1 text-sm font-semibold", until <= 1 ? "bg-sun-100 text-[#7a5300]" : "bg-paper text-ink-soft")}>
-                {until === 0 ? "Today" : until === 1 ? "Tomorrow" : `In ${until} days`}
-              </p>
-            )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {until !== null && (
+                <p className={cx("inline-flex rounded-full px-3 py-1 text-sm font-semibold", until <= 1 ? "bg-sun-100 text-[#7a5300]" : "bg-paper text-ink-soft")}>
+                  {until === 0 ? "Today" : until === 1 ? "Tomorrow" : `In ${until} days`}
+                </p>
+              )}
+              {data.session_link && (
+                <AButton href={data.session_link} target="_blank" rel="noopener" size="sm" variant={until === 0 ? "primary" : "secondary"}>
+                  <Video className="h-4 w-4" aria-hidden /> Join live session
+                </AButton>
+              )}
+            </div>
           </Card>
           <Card className="flex items-center gap-4 p-5">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sun-100 text-[#8a5d00]"><Trophy className="h-5 w-5" aria-hidden /></span>
@@ -156,5 +166,29 @@ function Stat({ icon, label, value, unit, tone }: { icon: ReactNode; label: stri
         <p className="font-display text-2xl font-bold tabular-nums">{value}<span className="ml-1 font-sans text-sm font-medium text-ink-faint">{unit}</span></p>
       </div>
     </Card>
+  );
+}
+
+function Announcements({ items }: { items: { id: number; title: string; body: string; author: string; created_at: string }[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? items : items.slice(0, 1);
+  return (
+    <section aria-label="Announcements" className="rounded-2xl border border-sun-300/60 bg-sun-100/40 p-4 sm:p-5">
+      {shown.map((a, i) => (
+        <div key={a.id} className={cx("flex gap-3", i > 0 && "mt-4 border-t border-sun-300/40 pt-4")}>
+          <Megaphone className="mt-0.5 h-5 w-5 shrink-0 text-[#8a5d00]" aria-hidden />
+          <div className="min-w-0">
+            <p className="font-semibold">{a.title}</p>
+            <p className="mt-0.5 whitespace-pre-line text-[15px] text-ink-soft">{a.body}</p>
+            <p className="mt-1 text-xs text-ink-faint">{a.author} · {new Date(a.created_at.endsWith("Z") || a.created_at.includes("+") ? a.created_at : a.created_at + "Z").toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</p>
+          </div>
+        </div>
+      ))}
+      {items.length > 1 && (
+        <button onClick={() => setAll(!all)} className="mt-3 pl-8 text-sm font-semibold text-[#7a5300] hover:underline">
+          {all ? "Show less" : `Show ${items.length - 1} earlier announcement${items.length > 2 ? "s" : ""}`}
+        </button>
+      )}
+    </section>
   );
 }

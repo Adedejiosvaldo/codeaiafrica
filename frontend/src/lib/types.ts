@@ -55,6 +55,9 @@ export interface LearnerDashboard {
   next_session: string | null;
   next_session_week: number | null;
   activity: string[];
+  session_link: string;
+  session_time: string;
+  announcements: { id: number; title: string; body: string; author: string; created_at: string }[];
 }
 
 export interface Quiz {
@@ -153,6 +156,8 @@ export interface SettingsData {
   demo_day: string;
   start_date: string;
   contact_email: string;
+  session_link: string;
+  session_time: string;
 }
 
 export type AdminMe = { email: string; name: string; role: "admin" | "ta" };

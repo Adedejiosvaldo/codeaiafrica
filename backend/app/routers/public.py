@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -48,7 +48,7 @@ def join_waitlist(body: WaitlistIn, db: Session = Depends(get_db)):
 
 
 @router.post("/applications", status_code=201, dependencies=[Depends(limit("apply", 5, 3600))])
-def apply(body: ApplicationIn, db: Session = Depends(get_db)):
+def apply(body: ApplicationIn, request: Request, tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not settings(db).applications_open:
         raise HTTPException(403, "Applications are closed right now. Join the waitlist and we'll tell you when they open.")
     if body.website:
@@ -61,4 +61,7 @@ def apply(body: ApplicationIn, db: Session = Depends(get_db)):
     data["consented_at"] = now()
     db.add(Application(**data))
     db.commit()
+    if request.app.state.mailer.enabled:
+        from .. import mailer
+        tasks.add_task(mailer.send_many, request.app, [(email, *mailer.application_received(body.name))])
     return {"message": "Application received. We'll reply by email and WhatsApp."}

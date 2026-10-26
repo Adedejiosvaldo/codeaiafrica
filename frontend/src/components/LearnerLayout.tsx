@@ -22,7 +22,7 @@ export default function LearnerLayout() {
       <div className="grid min-h-dvh place-items-center px-4">
         <div className="text-center">
           <Link to="/"><Logo /></Link>
-          <ErrorState message={error?.message ?? "Something went wrong."} action={<LinkButton to="/" variant="secondary">Go to the home page</LinkButton>} />
+          <ErrorState message={error?.message ?? "Something went wrong."} action={<LinkButton to="/find-my-link" variant="secondary">Get my link by email</LinkButton>} />
         </div>
       </div>
     );

@@ -73,6 +73,12 @@ export default function SettingsPage() {
               <Field label="First live session (week 1)" htmlFor="start_date" hint="Learners see the current week and next session from this.">
                 <TextInput id="start_date" type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} />
               </Field>
+              <Field label="Live session link" htmlFor="session_link" hint="Zoom, Google Meet or similar. Learners see a Join button.">
+                <TextInput id="session_link" type="url" placeholder="https://" value={form.session_link} onChange={(e) => set("session_link", e.target.value)} />
+              </Field>
+              <Field label="Live session time" htmlFor="session_time" hint="Shown as written, e.g. 10:00 WAT">
+                <TextInput id="session_time" value={form.session_time} onChange={(e) => set("session_time", e.target.value)} />
+              </Field>
               <Field label="Privacy contact email" htmlFor="contact_email" hint="Shown on the privacy page for data requests">
                 <TextInput id="contact_email" type="email" value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} />
               </Field>
