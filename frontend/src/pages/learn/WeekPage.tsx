@@ -98,11 +98,25 @@ export default function WeekPage() {
                 <LinkButton to={`${base}/lab/${week.week}`} size="lg" className="w-full">
                   <Play className="h-4 w-4 fill-current" aria-hidden /> {week.done ? "Open the interactive lab" : "Start the interactive lab"}
                 </LinkButton>
-                <p className="mt-2 text-center text-xs text-ink-faint">Step-by-step, with Python running in your browser. Passing every step submits this week.</p>
-                {lab && (
-                  <a href={lab.href} target="_blank" rel="noopener" className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
-                    Prefer a notebook? Open it in the browser lab <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                  </a>
+                {week.lab_submits ? (
+                  <>
+                    <p className="mt-2 text-center text-xs text-ink-faint">Step-by-step, with Python running in your browser. Passing every step submits this week.</p>
+                    {lab && (
+                      <a href={lab.href} target="_blank" rel="noopener" className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
+                        Prefer a notebook? {lab.label} <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-center text-xs text-ink-faint">Part 1: the ideas, step by step in your browser.</p>
+                    {lab && (
+                      <AButton href={lab.href} target="_blank" rel="noopener" variant="secondary" size="lg" className="mt-3 w-full">
+                        Part 2: open the notebook <ExternalLink className="h-4 w-4" aria-hidden />
+                      </AButton>
+                    )}
+                    <p className="mt-2 text-center text-xs text-ink-faint">Part 2 needs a free GPU on Kaggle. Its completion code submits the week.</p>
+                  </>
                 )}
               </>
             ) : lab && (

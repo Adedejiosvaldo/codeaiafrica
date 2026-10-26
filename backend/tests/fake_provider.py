@@ -15,7 +15,7 @@ import httpx
 
 SMS_JSON = {"name": "ADEBAYO OLUWASEUN", "amount": 15500, "date": "2026-03-12"}
 TOOL_ARGS = {
-    "get_food_price": {"commodity": "rice", "market": "Kano", "month": "2025-06"},
+    "get_food_price": {"commodity": "rice", "market": "Kano"},
     "calculator": {"expression": "(1200 - 800) / 800 * 100"},
 }
 
@@ -48,7 +48,8 @@ def chat_reply(body):
     if "[chunk" in text or "[chunk" in system:
         cited = re.findall(r"\[chunk (\d+)\]", text + system)
         return {"role": "assistant", "content": f"From the handbook: classes are on Saturdays [chunk {cited[0] if cited else 1}]."}
-    return {"role": "assistant", "content": f"(t={body.get('temperature')}) Practice reply to: {text[:80]}"}
+    style = f" in the style of: {system[:40]}" if system and system != "You are a helpful assistant." else ""
+    return {"role": "assistant", "content": f"(t={body.get('temperature')}) Practice reply{style} to: {text[:80]}"}
 
 
 def handle(request: httpx.Request) -> httpx.Response:

@@ -229,7 +229,17 @@ assert 'air_label(' in __code__, "Use your air_label function inside the loop." 
     ],
 }
 
-LABS = {lab["week"]: lab for lab in [WEEK2]}
+from .labcontent.week06 import WEEK6  # noqa: E402
+from .labcontent.week07 import WEEK7  # noqa: E402
+from .labcontent.week08 import WEEK8  # noqa: E402
+from .labcontent.week09 import WEEK9  # noqa: E402
+from .labcontent.week10 import WEEK10  # noqa: E402
+
+LABS = {lab["week"]: lab for lab in [WEEK2, WEEK6, WEEK7, WEEK8, WEEK9, WEEK10]}
+for _lab in LABS.values():
+    _lab.setdefault("setup", "")
+    _lab.setdefault("uses_ai", False)
+    _lab.setdefault("completes_week", True)
 
 
 def step_ids(week):

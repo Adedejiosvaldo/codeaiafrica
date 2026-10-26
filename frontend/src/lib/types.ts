@@ -27,6 +27,8 @@ export interface Week {
 export interface LearnerWeek extends Week {
   done: boolean;
   interactive: boolean;
+  /** Passing every step of the interactive lab submits the week (false for week 6, which has a part 2) */
+  lab_submits: boolean;
   value: string | null;
   submitted_at: string | null;
 }

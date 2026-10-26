@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronLeft, Code2, Eye, FileText, Lightbulb, Loader2, Lock,
-  PartyPopper, Play, RotateCcw, Square, Target, Terminal, Trash2, XCircle,
+  ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronLeft, Code2, Eye, FileText, Lightbulb, Loader2, Lock, PartyPopper, Play, RotateCcw, Sparkles, Square, Target, Terminal, Trash2, XCircle,
 } from "lucide-react";
 import { ApiError, api } from "../../lib/api";
 import { useApi } from "../../lib/useApi";
@@ -13,7 +12,8 @@ import { usePython, type RunResult } from "../../lab/usePython";
 import { Button, Collapse, ErrorState, LinkButton, Logo, PRESS, PageLoader, cx, useToast } from "../../components/ui";
 
 type Step = { id: string; title: string; body: string; task: string; starter: string; check: string; hint: string; solution: string };
-type Lab = { week: number; title: string; intro: string; steps: Step[]; passed: string[]; week_done: boolean; email: string };
+type Lab = { week: number; title: string; intro: string; steps: Step[]; passed: string[]; week_done: boolean; email: string;
+  setup: string; uses_ai: boolean; completes_week: boolean };
 type Line = { kind: "out" | "error" | "pass" | "fail" | "info"; text: string; tip?: string };
 
 const store = {
@@ -50,12 +50,20 @@ function LabWorkspace({ lab, token }: { lab: Lab; token: string }) {
   const [slow, setSlow] = useState(false);
   const wide = useMediaQuery("(min-width: 1024px)");
 
-  // Replay the code of passed steps after (re)starting Python, so their variables exist again
-  // Replay the exact code that passed (not whatever is in the editor now, which might be half-edited or loop forever)
-  const restore = useCallback(() => lab.steps.filter((s) => passedRef.current.includes(s.id))
-    .map((s) => store.get(key(`${s.id}-passed`)) ?? s.solution), [lab.steps]); // eslint-disable-line react-hooks/exhaustive-deps
+  // After (re)starting Python: run the lab's setup, then replay the exact code that passed each earlier step
+  // (not whatever is in the editor now, which might be half-edited or loop forever)
+  const restore = useCallback(() => [
+    ...(lab.setup ? [lab.setup] : []),
+    ...lab.steps.filter((s) => passedRef.current.includes(s.id)).map((s) => store.get(key(`${s.id}-passed`)) ?? s.solution),
+  ], [lab.steps, lab.setup]); // eslint-disable-line react-hooks/exhaustive-deps
   const passedRef = useRef(passed); passedRef.current = passed;
-  const py = usePython(restore);
+  const py = usePython(restore, `/api/learner/${token}`);
+  const [aiLeft, setAiLeft] = useState<{ remaining: number; limit: number } | null>(null);
+  const refreshUsage = useCallback(() => {
+    if (!lab.uses_ai) return;
+    api.get<{ remaining: number; limit: number }>(`/learner/${token}/ai/usage`).then(setAiLeft).catch(() => {});
+  }, [lab.uses_ai, token]);
+  useEffect(() => { refreshUsage(); }, [refreshUsage]);
   const busy = py.status !== "ready";
 
   useEffect(() => { setHintOpen(false); setLines([]); }, [index]);
@@ -83,6 +91,7 @@ function LabWorkspace({ lab, token }: { lab: Lab; token: string }) {
     const r = await py.run(codes[step.id]);
     clearTimeout(t); setSlow(false);
     show(r, false);
+    refreshUsage();
   }
 
   async function check() {
@@ -92,6 +101,7 @@ function LabWorkspace({ lab, token }: { lab: Lab; token: string }) {
     const r = await py.run(codes[step.id], step.check);
     clearTimeout(t); setSlow(false);
     show(r, true);
+    refreshUsage();
     if (!r) return;
     if (!r.passed) {
       setFails((f) => ({ ...f, [step.id]: (f[step.id] ?? 0) + 1 }));
@@ -137,7 +147,7 @@ function LabWorkspace({ lab, token }: { lab: Lab; token: string }) {
 
   return (
     <div className="flex h-dvh flex-col bg-paper">
-      <TopBar lab={lab} token={token} index={index} passed={passed} status={py.status} detail={py.detail} restart={py.restart} />
+      <TopBar lab={lab} token={token} index={index} passed={passed} status={py.status} detail={py.detail} restart={py.restart} aiLeft={aiLeft} />
 
       {/* Phones and tablets: two tabs. Desktop: resizable split. */}
       {wide ? <SplitView left={instructions} right={editorPane} /> : (<>
@@ -175,8 +185,9 @@ function useMediaQuery(query: string) {
 
 /* ================================================================== top bar */
 
-function TopBar({ lab, token, index, passed, status, detail, restart }:
-  { lab: Lab; token: string; index: number; passed: string[]; status: string; detail: string; restart: () => void }) {
+function TopBar({ lab, token, index, passed, status, detail, restart, aiLeft }:
+  { lab: Lab; token: string; index: number; passed: string[]; status: string; detail: string; restart: () => void;
+    aiLeft: { remaining: number; limit: number } | null }) {
   const pill = {
     loading: { dot: "bg-sun-500 animate-pulse", text: detail || "Starting Python" },
     ready: { dot: "bg-brand-500", text: "Python ready" },
@@ -199,6 +210,13 @@ function TopBar({ lab, token, index, passed, status, detail, restart }:
         <div className="hidden h-1.5 w-32 overflow-hidden rounded-full bg-line md:block" aria-hidden>
           <div className="h-full rounded-full bg-brand-500 motion-safe:transition-[width] motion-safe:duration-300" style={{ width: `${(passed.length / lab.steps.length) * 100}%` }} />
         </div>
+        {aiLeft && (
+          <span title="AI calls you have left today. Repeating the same request is free."
+            className={cx("hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 sm:flex",
+              aiLeft.remaining <= 10 ? "bg-clay-50 text-clay-700 ring-clay-500/20" : "bg-paper text-ink-soft ring-line")}>
+            <Sparkles className="h-3.5 w-3.5" aria-hidden /> {aiLeft.remaining}/{aiLeft.limit} AI calls left
+          </span>
+        )}
         <span className="flex max-w-[170px] items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-line" aria-live="polite">
           <span className={cx("h-2 w-2 shrink-0 rounded-full", pill.dot)} aria-hidden /> <span className="truncate">{pill.text}</span>
         </span>
@@ -421,7 +439,11 @@ function CompleteDialog({ lab, onReview, onHome }: { lab: Lab; onReview: () => v
         className="animate-rise w-full max-w-md rounded-[28px] bg-card p-7 text-center shadow-lift outline-none">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sun-100 text-[#8a5d00]"><PartyPopper className="h-8 w-8" aria-hidden /></span>
         <h2 id="done-title" className="mt-4 text-2xl font-bold">Week {lab.week} complete!</h2>
-        <p className="mt-2 text-ink-soft">You passed all {steps.length} steps. We've marked this week as submitted on your dashboard.</p>
+        <p className="mt-2 text-ink-soft">
+          You passed all {steps.length} steps.{" "}
+          {lab.completes_week ? "We've marked this week as submitted on your dashboard."
+            : "Now do part 2 of this week (the notebook), and submit its completion code on the week page."}
+        </p>
         <ul className="mt-5 space-y-1.5 text-left text-sm">
           {steps.map((t) => <li key={t} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand-600" aria-hidden /> {t}</li>)}
         </ul>

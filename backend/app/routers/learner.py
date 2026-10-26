@@ -63,7 +63,8 @@ def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get
     for w in course.WEEKS:
         sub = done.get(w["week"])
         weeks.append({**w, "done": sub is not None, "value": sub.value if sub else None,
-                      "submitted_at": sub.created_at if sub else None, "interactive": w["week"] in labs.LABS})
+                      "submitted_at": sub.created_at if sub else None, "interactive": w["week"] in labs.LABS,
+                      "lab_submits": w["week"] in labs.LABS and labs.LABS[w["week"]]["completes_week"]})
     return {
         "name": learner.name,
         "first_name": learner.name.split()[0],
@@ -176,7 +177,8 @@ def pass_step(week: int, step_id: str, learner: Learner = Depends(get_learner), 
         passed.add(step_id)
     completed = passed >= set(ids)
     newly_completed = False
-    if completed and not any(sub.week == week for sub in learner.submissions):
+    lab = labs.LABS[week]
+    if completed and lab["completes_week"] and not any(sub.week == week for sub in learner.submissions):
         db.add(Submission(learner_id=learner.id, week=week, value=LAB_DONE))
         newly_completed = True
     db.commit()

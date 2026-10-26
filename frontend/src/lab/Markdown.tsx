@@ -33,7 +33,9 @@ export function Markdown({ text, className = "" }: { text: string; className?: s
 }
 
 export function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map((t, i) => {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g).filter(Boolean).map((t, i) => {
+    const link = t.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
+    if (link) return <a key={i} href={link[2]} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 underline underline-offset-2">{link[1]}</a>;
     if (t.startsWith("**")) return <strong key={i} className="font-semibold text-ink">{t.slice(2, -2)}</strong>;
     if (t.startsWith("`")) return <code key={i} className="rounded-md bg-ink/[0.06] px-1.5 py-0.5 font-mono text-[0.88em] text-ink">{t.slice(1, -1)}</code>;
     return t;
