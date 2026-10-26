@@ -96,7 +96,7 @@ export default function PublicLayout() {
           {[
             { title: "Course", links: [["/#path", "Curriculum"], ["/#how", "How it works"], ["/#projects", "Capstone projects"]] },
             { title: "Get started", links: [["/try", "Train your first AI"], ["/apply", "Apply"], ["/#waitlist", "Waitlist"]] },
-            { title: "Team", links: [["/admin", "Team sign in"]] },
+            { title: "About", links: [["/privacy", "Privacy notice"], ["/admin", "Team sign in"]] },
           ].map((col) => (
             <div key={col.title} className="space-y-2.5 text-sm">
               <p className="font-semibold text-white">{col.title}</p>

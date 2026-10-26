@@ -6,6 +6,7 @@ import Home from "./pages/public/Home";
 import Try from "./pages/public/Try";
 import Apply from "./pages/public/Apply";
 import NotFound from "./pages/public/NotFound";
+import Privacy from "./pages/public/Privacy";
 import LearnerLayout from "./components/LearnerLayout";
 import LearnerHome from "./pages/learn/LearnerHome";
 import LearnerPath from "./pages/learn/LearnerPath";
@@ -31,6 +32,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="try" element={<Try />} />
         <Route path="apply" element={<Apply />} />
+        <Route path="privacy" element={<Privacy />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="learn/:token/quiz/:phase" element={<QuizPage />} />

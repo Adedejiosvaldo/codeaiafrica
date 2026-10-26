@@ -8,6 +8,7 @@ export interface PublicConfig {
   labs_required: number;
   demo_day: string;
   start_date: string;
+  contact_email: string;
 }
 
 export interface Week {
@@ -149,4 +150,7 @@ export interface SettingsData {
   post_quiz_open: boolean;
   demo_day: string;
   start_date: string;
+  contact_email: string;
 }
+
+export type AdminMe = { email: string; name: string; role: "admin" | "ta" };

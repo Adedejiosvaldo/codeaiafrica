@@ -6,14 +6,17 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
+from typing import Literal
+
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from .. import course, scoring
-from ..models import AdminUser, Application, Learner, QuizAttempt, Settings, Submission, WaitlistEntry, now
+from ..models import AdminUser, Application, AuditLog, Learner, QuizAttempt, Settings, Submission, WaitlistEntry, now
 from ..schemas import ApplicationPatch, LoginIn, SelectionIn, SettingsIn
-from ..security import COOKIE, get_db, hash_password, make_session, require_admin, verify_password
+from ..ratelimit import limit
+from ..security import COOKIE, audit, get_db, hash_password, make_session, require_admin, require_full_admin, verify_password
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 auth = APIRouter(prefix="/api/admin", tags=["admin"])  # routes that don't need a session
@@ -21,7 +24,7 @@ auth = APIRouter(prefix="/api/admin", tags=["admin"])  # routes that don't need 
 
 # --------------------------------------------------------------------------- sign in
 
-@auth.post("/login")
+@auth.post("/login", dependencies=[Depends(limit("login", 10, 900, "Too many sign-in attempts. Please wait and try again."))])
 def login(body: LoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
     admin = db.scalar(select(AdminUser).where(func.lower(AdminUser.email) == body.email.lower()))
     if admin is None or not verify_password(body.password, admin.password_hash):
@@ -29,7 +32,9 @@ def login(body: LoginIn, request: Request, response: Response, db: Session = Dep
     cfg = request.app.state.config
     response.set_cookie(COOKIE, make_session(request, admin.id), httponly=True, samesite="lax",
                         secure=cfg.secure_cookies, max_age=cfg.session_days * 86400, path="/")
-    return {"email": admin.email, "name": admin.name}
+    audit(db, admin, "signed in")
+    db.commit()
+    return {"email": admin.email, "name": admin.name, "role": admin.role}
 
 
 @auth.post("/logout")
@@ -40,7 +45,7 @@ def logout(response: Response):
 
 @router.get("/me")
 def me(admin: AdminUser = Depends(require_admin)):
-    return {"email": admin.email, "name": admin.name}
+    return {"email": admin.email, "name": admin.name, "role": admin.role}
 
 
 class PasswordIn(BaseModel):
@@ -61,22 +66,60 @@ class AdminIn(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     name: str = Field("", max_length=120)
     password: str = Field(min_length=10, max_length=200)
+    role: Literal["admin", "ta"] = "ta"
+
+
+class RoleIn(BaseModel):
+    role: Literal["admin", "ta"]
 
 
 @router.get("/team")
 def team(admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
-    return [{"id": a.id, "email": a.email, "name": a.name, "created_at": a.created_at}
+    return [{"id": a.id, "email": a.email, "name": a.name, "role": a.role, "created_at": a.created_at}
             for a in db.scalars(select(AdminUser).order_by(AdminUser.id))]
 
 
 @router.post("/team", status_code=201)
-def add_team_member(body: AdminIn, admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+def add_team_member(body: AdminIn, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
     email = body.email.strip().lower()
     if db.scalar(select(AdminUser).where(func.lower(AdminUser.email) == email)):
         raise HTTPException(409, "That person already has an account.")
-    db.add(AdminUser(email=email, name=body.name.strip(), password_hash=hash_password(body.password)))
+    db.add(AdminUser(email=email, name=body.name.strip(), password_hash=hash_password(body.password), role=body.role))
+    audit(db, admin, "added team member", f"{email} as {body.role}")
     db.commit()
     return {"message": f"Added {email}. Send them the password privately."}
+
+
+@router.patch("/team/{member_id}")
+def change_role(member_id: int, body: RoleIn, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
+    member = db.get(AdminUser, member_id)
+    if member is None:
+        raise HTTPException(404, "No team member with that number.")
+    if member.id == admin.id and body.role != "admin":
+        raise HTTPException(400, "You can't remove your own admin role. Ask another admin.")
+    member.role = body.role
+    audit(db, admin, "changed role", f"{member.email} to {body.role}")
+    db.commit()
+    return {"message": f"{member.email} is now {'an admin' if body.role == 'admin' else 'a TA'}."}
+
+
+@router.delete("/team/{member_id}")
+def remove_member(member_id: int, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
+    member = db.get(AdminUser, member_id)
+    if member is None:
+        raise HTTPException(404, "No team member with that number.")
+    if member.id == admin.id:
+        raise HTTPException(400, "You can't remove yourself.")
+    audit(db, admin, "removed team member", member.email)
+    db.delete(member)
+    db.commit()
+    return {"message": f"Removed {member.email}."}
+
+
+@router.get("/audit")
+def audit_log(admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
+    rows = db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(300))
+    return [{"id": r.id, "who": r.admin_email, "action": r.action, "detail": r.detail, "at": r.created_at} for r in rows]
 
 
 # --------------------------------------------------------------------------- helpers
@@ -209,17 +252,33 @@ def get_application(app_id: int, admin: AdminUser = Depends(require_admin), db: 
 def update_application(app_id: int, body: ApplicationPatch, admin: AdminUser = Depends(require_admin),
                        db: Session = Depends(get_db)):
     app = load_app(db, app_id)
+    if body.status is not None and body.status != app.status and admin.role != "admin":
+        raise HTTPException(403, "Only an admin can change a decision. You can score and add notes.")
     if body.clear_q9:
         app.q9_score = None
     elif body.q9_score is not None:
         app.q9_score = body.q9_score
         app.reviewed_at = now()
+        audit(db, admin, "scored problem answer", f"#{app.id} {app.name}: {body.q9_score}")
     if body.reviewer_note is not None:
         app.reviewer_note = body.reviewer_note
-    if body.status is not None:
+    if body.status is not None and body.status != app.status:
         set_status(db, app, body.status)
+        audit(db, admin, "changed decision", f"#{app.id} {app.name}: {body.status}")
     db.commit()
     return app_out(load_app(db, app_id), full=True)
+
+
+@router.delete("/applications/{app_id}")
+def delete_application(app_id: int, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
+    """Erase a person's application and, if they were accepted, all their course data (a data-deletion request)."""
+    app = load_app(db, app_id)
+    if app.learner is not None:
+        db.delete(app.learner)
+    audit(db, admin, "deleted application", f"#{app.id} (personal data erased)")
+    db.delete(app)
+    db.commit()
+    return {"message": "Deleted, including any course progress."}
 
 
 # --------------------------------------------------------------------------- selection
@@ -259,11 +318,14 @@ def selection_preview(body: SelectionIn, admin: AdminUser = Depends(require_admi
 
 
 @router.post("/selection/apply")
-def selection_apply(body: SelectionIn, admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+def selection_apply(body: SelectionIn, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
     plan = plan_selection(db, body.include_unscored)
     # Remove places first, so accepting never collides with a learner record being removed
+    changes = 0
     for app, decision, _ in sorted(plan, key=lambda p: p[1] == "accepted"):
+        changes += app.status != decision
         set_status(db, app, decision)
+    audit(db, admin, "ran selection", f"{changes} decisions changed")
     db.commit()
     return plan_out(plan_selection(db, body.include_unscored), get_settings(db))
 
@@ -299,6 +361,7 @@ def reset_link(learner_id: int, admin: AdminUser = Depends(require_admin), db: S
     if learner is None:
         raise HTTPException(404, "No learner with that number.")
     learner.token = secrets.token_urlsafe(18)
+    audit(db, admin, "made a new learner link", learner.email)
     db.commit()
     return {"token": learner.token}
 
@@ -312,9 +375,10 @@ def list_waitlist(admin: AdminUser = Depends(require_admin), db: Session = Depen
 
 
 @router.delete("/waitlist/{entry_id}")
-def delete_waitlist(entry_id: int, admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+def delete_waitlist(entry_id: int, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
     entry = db.get(WaitlistEntry, entry_id)
     if entry:
+        audit(db, admin, "removed from waitlist", entry.email)
         db.delete(entry)
         db.commit()
     return {"message": "Removed."}
@@ -332,17 +396,23 @@ def read_settings(admin: AdminUser = Depends(require_admin), db: Session = Depen
 
 
 @router.put("/settings")
-def write_settings(body: SettingsIn, admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+def write_settings(body: SettingsIn, admin: AdminUser = Depends(require_full_admin), db: Session = Depends(get_db)):
     s = get_settings(db)
+    changed = [k for k, v in body.model_dump().items() if getattr(s, k) != v]
     for k, v in body.model_dump().items():
         setattr(s, k, v)
+    if changed:
+        audit(db, admin, "changed settings", ", ".join(changed))
     db.commit()
     return settings_out(s)
 
 
 # --------------------------------------------------------------------------- exports
 
-def csv_response(name, header, rows):
+def csv_response(name, header, rows, db=None, admin=None):
+    if db is not None and admin is not None:
+        audit(db, admin, "exported", name)
+        db.commit()
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(header)
@@ -362,7 +432,7 @@ def export_applications(admin: AdminUser = Depends(require_admin), db: Session =
              scoring.HOURS[a.lab_hours], scoring.CODED[a.coded_before], a.problem, a.commits,
              "" if a.q9_score is None else a.q9_score, scoring.total_score(a), a.status, a.reviewer_note]
             for a in apps]
-    return csv_response("applications.csv", header, rows)
+    return csv_response("applications.csv", header, rows, db, admin)
 
 
 @router.get("/export/learners.csv")
@@ -376,11 +446,11 @@ def export_learners(request: Request, admin: AdminUser = Depends(require_admin),
         rows.append([o["name"], o["email"], o["whatsapp"], f"{base}/learn/{o['token']}", o["labs_done"],
                      " ".join(map(str, o["weeks_done"])), o["pre_score"] if o["pre_score"] is not None else "",
                      o["post_score"] if o["post_score"] is not None else ""])
-    return csv_response("learners.csv", header, rows)
+    return csv_response("learners.csv", header, rows, db, admin)
 
 
 @router.get("/export/waitlist.csv")
 def export_waitlist(admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
     rows = [[w.email, w.name, w.created_at.isoformat()]
             for w in db.scalars(select(WaitlistEntry).order_by(WaitlistEntry.created_at))]
-    return csv_response("waitlist.csv", ["email", "name", "joined"], rows)
+    return csv_response("waitlist.csv", ["email", "name", "joined"], rows, db, admin)

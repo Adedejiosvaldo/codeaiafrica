@@ -9,6 +9,7 @@ from .. import course, labs
 from ..codes import check_code
 from ..models import LabStep, Learner, QuizAttempt, Settings, Submission, now
 from ..schemas import QuizIn, SubmissionIn
+from ..ratelimit import limit
 from ..security import get_db
 
 router = APIRouter(prefix="/api/learner", tags=["learner"])
@@ -87,7 +88,7 @@ def valid_link(value):
     return parsed.scheme in ("http", "https") and "." in parsed.netloc
 
 
-@router.post("/{token}/submissions")
+@router.post("/{token}/submissions", dependencies=[Depends(limit("submit", 60, 600))])
 def submit(body: SubmissionIn, learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
     week = course.WEEK_BY_NUMBER[body.week]
     value = body.value.strip()

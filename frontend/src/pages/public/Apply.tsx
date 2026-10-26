@@ -9,18 +9,18 @@ import { Button, Card, ChoiceGroup, Field, LinkButton, PageLoader, TextArea, Tex
 type Form = {
   name: string; email: string; whatsapp: string; city: string; country: string;
   is_adult: "" | "yes" | "no"; occupation: string; device: string; live_sessions: string; lab_hours: string;
-  coded_before: string; problem: string; commits: "" | "yes" | "no"; website: string;
+  coded_before: string; problem: string; commits: "" | "yes" | "no"; website: string; consent: boolean;
 };
 const EMPTY: Form = {
   name: "", email: "", whatsapp: "", city: "", country: "Nigeria", is_adult: "", occupation: "", device: "",
-  live_sessions: "", lab_hours: "", coded_before: "", problem: "", commits: "", website: "",
+  live_sessions: "", lab_hours: "", coded_before: "", problem: "", commits: "", website: "", consent: false,
 };
 const DRAFT_KEY = "akada-application-draft";
 
 const STEPS = [
   { title: "About you", fields: ["name", "email", "whatsapp", "city", "country", "is_adult", "occupation"] },
   { title: "Your setup", fields: ["device", "live_sessions", "lab_hours", "coded_before"] },
-  { title: "Your idea", fields: ["problem", "commits"] },
+  { title: "Your idea", fields: ["problem", "commits", "consent"] },
   { title: "Check and send", fields: [] },
 ] as const;
 
@@ -28,7 +28,7 @@ const opts = (m: Record<string, string>) => Object.entries(m).map(([value, label
 
 function validate(f: Form, fields: readonly string[]) {
   const e: Record<string, string> = {};
-  const need = (k: keyof Form, msg: string) => fields.includes(k) && !f[k].trim() && (e[k] = msg);
+  const need = (k: keyof Form, msg: string) => fields.includes(k) && !String(f[k]).trim() && (e[k] = msg);
   need("name", "Tell us your name.");
   need("email", "We need an email to reply to you.");
   if (fields.includes("email") && f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = "Enter a valid email address.";
@@ -44,6 +44,7 @@ function validate(f: Form, fields: readonly string[]) {
   need("coded_before", "Please answer this. Any answer is fine.");
   if (fields.includes("problem") && f.problem.trim().length < 10) e.problem = "Write a sentence or two about the problem.";
   need("commits", "Please answer this.");
+  if (fields.includes("consent") && !f.consent) e.consent = "Please agree to the privacy notice so we can process your application.";
   return e;
 }
 
@@ -59,11 +60,12 @@ export default function Apply() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...form, website: "" })); } catch { /* private mode */ }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...form, website: "", consent: false })); } catch { /* private mode */ }
   }, [form]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step, done]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => {
+    if (k === "consent") { setForm((f) => ({ ...f, consent: v as boolean })); setErrors((e) => { const { consent: _, ...rest } = e; return rest; }); return; }
     setForm((f) => ({ ...f, [k]: v }));
     setErrors((e) => { const { [k]: _, ...rest } = e; return rest; });
   };
@@ -217,6 +219,18 @@ export default function Apply() {
                   options={[{ value: "yes", label: "Yes, I commit" }, { value: "no", label: "No" }]}
                   onChange={(v) => set("commits", v as Form["commits"])} />
               </Field>
+              <div>
+                <label className={cx("flex cursor-pointer items-start gap-3 rounded-xl border bg-card px-4 py-3.5 transition-[border-color] duration-150",
+                  errors.consent ? "border-clay-500" : "border-line-strong")}>
+                  <input id="f-consent" type="checkbox" checked={form.consent} onChange={(e) => set("consent", e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-brand-600" aria-invalid={!!errors.consent || undefined} />
+                  <span className="text-[15px] text-ink-soft">
+                    I agree that Akada Labs can use my answers to review my application and contact me, as explained in the{" "}
+                    <a href="/privacy" target="_blank" rel="noopener" className="font-semibold text-brand-700 underline">privacy notice</a>.
+                  </span>
+                </label>
+                {errors.consent && <p className="mt-1.5 text-sm font-medium text-clay-700" role="alert">{errors.consent}</p>}
+              </div>
               <input type="text" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden value={form.website}
                 onChange={(e) => set("website", e.target.value)} />
             </>

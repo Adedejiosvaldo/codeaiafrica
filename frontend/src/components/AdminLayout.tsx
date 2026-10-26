@@ -1,9 +1,13 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { ClipboardCheck, ExternalLink, LayoutDashboard, ListChecks, LogOut, Settings, Users, UserPlus } from "lucide-react";
 import { api } from "../lib/api";
 import { useApi } from "../lib/useApi";
+import type { AdminMe } from "../lib/types";
+
+/** The signed-in team member, for hiding admin-only actions from TAs. */
+export const useAdmin = () => useOutletContext<AdminMe>();
 import { Button, cx, ErrorState, Logo, PageLoader, PRESS } from "./ui";
 
 const NAV = [
@@ -16,7 +20,7 @@ const NAV = [
 ];
 
 export default function AdminLayout() {
-  const { data: me, error, loading } = useApi<{ email: string; name: string }>("/admin/me");
+  const { data: me, error, loading } = useApi<AdminMe>("/admin/me");
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -58,7 +62,7 @@ export default function AdminLayout() {
           </a>
           <div className="flex items-center justify-between gap-2 px-3 py-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{me.name || "Team member"}</p>
+              <p className="truncate text-sm font-semibold">{me.name || "Team member"} <span className="ml-1 rounded-full bg-paper px-1.5 py-0.5 text-[10px] font-semibold uppercase text-ink-faint ring-1 ring-line">{me.role === "ta" ? "TA" : "Admin"}</span></p>
               <p className="truncate text-xs text-ink-faint">{me.email}</p>
             </div>
             <button onClick={signOut} className={cx("grid h-8 w-8 place-items-center rounded-full text-ink-soft hover:bg-ink/5 transition-[background-color,color,scale] duration-150 ease-out", PRESS)}
@@ -88,7 +92,7 @@ export default function AdminLayout() {
       </div>
 
       <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-9">
-        <Outlet />
+        <Outlet context={me} />
       </main>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Check, ClipboardCheck, Copy, Download, Search, SkipForward, X } from "lucide-react";
-import { PageHeader } from "../../components/AdminLayout";
+import { Check, ClipboardCheck, Copy, Download, Search, SkipForward, Trash2, X } from "lucide-react";
+import { PageHeader, useAdmin } from "../../components/AdminLayout";
 import { AButton, Badge, Button, Card, cx, EmptyState, ErrorState, PageLoader, PRESS, StatusBadge, TextArea, TextInput, useToast } from "../../components/ui";
 import { ApiError, api } from "../../lib/api";
 import { CODED, DEVICES, HOURS, LIVE, OCCUPATIONS, STATUS, formatDate, label, learnerLink } from "../../lib/labels";
@@ -129,7 +129,8 @@ export default function Applications() {
 
       {selected !== null && (
         <ReviewDrawer id={selected} onClose={() => setSelected(null)} onSaved={updateRow}
-          onNext={() => setSelected(nextUnscored(selected))} hasNext={nextUnscored(selected) !== null} />
+          onNext={() => setSelected(nextUnscored(selected))} hasNext={nextUnscored(selected) !== null}
+          onDeleted={(gone) => setData((all) => all?.filter((r) => r.id !== gone) ?? null)} />
       )}
     </>
   );
@@ -146,8 +147,9 @@ function ScorePill({ row }: { row: AppRow }) {
   );
 }
 
-function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
-  { id: number; onClose: () => void; onSaved: (d: AppDetail) => void; onNext: () => void; hasNext: boolean }) {
+function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext, onDeleted }:
+  { id: number; onClose: () => void; onSaved: (d: AppDetail) => void; onNext: () => void; hasNext: boolean; onDeleted: (id: number) => void }) {
+  const isAdmin = useAdmin().role === "admin";
   const { data, error, setData } = useApi<AppDetail>(`/admin/applications/${id}`);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -258,10 +260,10 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
 
             <div>
               <h3 className="font-bold">Decision</h3>
-              <p className="text-sm text-ink-soft">Usually set by running selection. Change it here for one person.</p>
+              <p className="text-sm text-ink-soft">{isAdmin ? "Usually set by running selection. Change it here for one person." : "Only an admin can change decisions. You can score and add notes."}</p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(Object.keys(STATUS) as Status[]).map((s) => (
-                  <button key={s} onClick={() => save({ status: s }, "status")} disabled={busy === "status" || data.status === s}
+                  <button key={s} onClick={() => save({ status: s }, "status")} disabled={!isAdmin || busy === "status" || data.status === s}
                     className={cx("flex h-10 items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-[border-color,background-color,color,scale] duration-150 ease-out", PRESS,
                       data.status === s ? "border-ink bg-ink text-white" : "border-line-strong bg-card hover:border-ink-faint")}>
                     {data.status === s && <Check className="h-4 w-4" aria-hidden />} {STATUS[s]}
@@ -283,6 +285,18 @@ function ReviewDrawer({ id, onClose, onSaved, onNext, hasNext }:
               </Card>
             )}
             <p className="text-xs text-ink-faint">Applied {formatDate(data.created_at, true)}{data.reviewed_at && ` · scored ${formatDate(data.reviewed_at, true)}`}</p>
+            {isAdmin && (
+              <div className="border-t border-line pt-5">
+                <h3 className="font-bold">Delete this person's data</h3>
+                <p className="text-sm text-ink-soft">For data-deletion requests. Removes the application and any course progress. This can't be undone.</p>
+                <Button size="sm" variant="danger" className="mt-3" loading={busy === "delete"} onClick={async () => {
+                  if (!confirm(`Permanently delete ${data.name}'s application and course data?`)) return;
+                  setBusy("delete");
+                  try { await api.del(`/admin/applications/${id}`); toast("Deleted"); onDeleted(id); close(); }
+                  catch (e) { toast((e as ApiError).message, "error"); setBusy(null); }
+                }}><Trash2 className="h-4 w-4" aria-hidden /> Delete permanently</Button>
+              </div>
+            )}
           </div>
         )}
         <div className="flex items-center justify-between gap-3 border-t border-line bg-card px-5 py-3">

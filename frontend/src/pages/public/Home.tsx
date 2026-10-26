@@ -371,6 +371,7 @@ function WaitlistForm() {
         <Button type="submit" variant="sun" size="lg" className="sm:h-11" loading={state.status === "busy"}>Notify me</Button>
       </div>
       {state.status === "error" && <p className="mt-3 text-sm font-medium text-sun-100" role="alert">{state.message}</p>}
+      <p className="mt-3 text-xs text-white/50">We'll only use your email to tell you about Akada Labs. <a href="/privacy" className="underline hover:text-white">Privacy notice</a></p>
     </form>
   );
 }

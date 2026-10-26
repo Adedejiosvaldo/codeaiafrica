@@ -37,9 +37,17 @@ class ApplicationIn(BaseModel):
     coded_before: Coded
     problem: str = Field(min_length=10, max_length=600)
     commits: bool
+    consent: bool = False
     website: str = ""  # honeypot
 
     _s = field_validator("name", "whatsapp", "city", "country", "problem")(_strip)
+
+    @field_validator("consent")
+    @classmethod
+    def must_consent(cls, v):
+        if not v:
+            raise ValueError("Please agree to the privacy notice so we can process your application.")
+        return v
 
     @field_validator("whatsapp")
     @classmethod
@@ -89,6 +97,7 @@ class SettingsIn(BaseModel):
     post_quiz_open: bool
     demo_day: str = Field("", max_length=40)
     start_date: str = Field("2027-02-06", pattern=r"^\d{4}-\d{2}-\d{2}$")
+    contact_email: str = Field("", max_length=254)
 
 
 class SelectionIn(BaseModel):

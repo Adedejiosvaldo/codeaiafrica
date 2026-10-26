@@ -16,6 +16,8 @@ class AdminUser(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True)
     name: Mapped[str] = mapped_column(String(120), default="")
     password_hash: Mapped[str] = mapped_column(String(300))
+    # "admin" can do everything; "ta" can review, score, mark attendance and give feedback
+    role: Mapped[str] = mapped_column(String(10), default="admin")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
@@ -33,6 +35,8 @@ class Settings(Base):
     demo_day: Mapped[str] = mapped_column(String(40), default="24 April 2027")
     # Saturday of week 1, as YYYY-MM-DD. Drives "this week" and the next live session.
     start_date: Mapped[str] = mapped_column(String(10), default="2027-02-06")
+    # Where people send privacy and data requests; shown on the privacy page
+    contact_email: Mapped[str] = mapped_column(String(254), default="")
 
 
 class WaitlistEntry(Base):
@@ -61,6 +65,8 @@ class Application(Base):
     coded_before: Mapped[str] = mapped_column(String(20))
     problem: Mapped[str] = mapped_column(Text)
     commits: Mapped[bool] = mapped_column(Boolean)
+    # When they agreed to the privacy notice (NDPA 2023: record consent)
+    consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Reviewer fields
     q9_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     reviewer_note: Mapped[str] = mapped_column(Text, default="")
@@ -122,3 +128,13 @@ class LabStep(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
     learner: Mapped[Learner] = relationship(back_populates="lab_steps")
+
+
+class AuditLog(Base):
+    """What the team did, and when."""
+    __tablename__ = "audit_log"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    admin_email: Mapped[str] = mapped_column(String(254))
+    action: Mapped[str] = mapped_column(String(60))
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)

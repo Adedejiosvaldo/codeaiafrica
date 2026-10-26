@@ -55,3 +55,15 @@ def require_admin(request: Request, db=Depends(get_db)):
     if admin is None:
         raise HTTPException(401, "Please sign in.")
     return admin
+
+
+def require_full_admin(admin=Depends(require_admin)):
+    """Only for admins, not TAs: settings, selection, team, deleting data."""
+    if admin.role != "admin":
+        raise HTTPException(403, "Only an admin can do that. Ask an admin on your team.")
+    return admin
+
+
+def audit(db, admin, action, detail=""):
+    from .models import AuditLog
+    db.add(AuditLog(admin_email=admin.email if admin else "system", action=action, detail=detail[:2000]))

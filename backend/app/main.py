@@ -9,6 +9,7 @@ from .config import Config, config as default_config
 from .db import Database
 from .models import AdminUser, Settings
 from .routers import admin, learner, public
+from .ratelimit import RateLimiter
 from .security import hash_password
 
 FIELD_NAMES = {"whatsapp": "WhatsApp number", "is_adult": "Age", "live_sessions": "Live sessions",
@@ -82,6 +83,7 @@ def create_app(cfg: Config | None = None):
     app = FastAPI(title="Akada Labs", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.config = cfg
     app.state.db = Database(cfg.database_url)
+    app.state.limiter = RateLimiter()
     bootstrap(app.state.db, cfg)
 
     # Compress responses: the in-browser Python download shrinks by about two thirds

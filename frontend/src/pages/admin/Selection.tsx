@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ListChecks, Sparkles } from "lucide-react";
-import { PageHeader } from "../../components/AdminLayout";
+import { PageHeader, useAdmin } from "../../components/AdminLayout";
 import { Badge, Button, Card, EmptyState, ErrorState, PageLoader, StatusBadge, cx, useToast } from "../../components/ui";
 import { ApiError, api } from "../../lib/api";
 import { STATUS } from "../../lib/labels";
@@ -14,6 +14,7 @@ export default function Selection() {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+  const isAdmin = useAdmin().role === "admin";
 
   useEffect(() => {
     api.post<SelectionPlan>("/admin/selection/preview", { include_unscored: includeUnscored })
@@ -75,7 +76,8 @@ export default function Selection() {
             <Button onClick={apply} loading={busy}>Yes, apply {plan.changes} change{plan.changes === 1 ? "" : "s"}</Button>
           </div>
         ) : (
-          <Button className="shrink-0" onClick={() => setConfirming(true)} disabled={plan.changes === 0}>
+          <Button className="shrink-0" onClick={() => setConfirming(true)} disabled={plan.changes === 0 || !isAdmin}
+            title={isAdmin ? undefined : "Only an admin can apply selection"}>
             <Sparkles className="h-4 w-4" aria-hidden /> {plan.changes ? `Apply ${plan.changes} change${plan.changes === 1 ? "" : "s"}` : "Nothing to change"}
           </Button>
         )}
