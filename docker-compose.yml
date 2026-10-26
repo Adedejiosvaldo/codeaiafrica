@@ -1,0 +1,45 @@
+# Production stack for one VPS: Caddy (HTTPS) -> Akada app -> RAG chunker.
+# Only Caddy is reachable from the internet. See deploy/DEPLOY.md.
+services:
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CHUNKER_URL: http://chunker:8080
+      PUBLIC_URL: https://${DOMAIN}
+    volumes:
+      - app_data:/data
+    depends_on: [chunker]
+    expose: ["8000"]
+    deploy:
+      resources:
+        limits: { memory: 1g }
+
+  chunker:
+    # Built straight from GitHub. Pin a tag or commit (#v1.0.0) once you publish one, so labs don't change mid-cohort.
+    build: https://github.com/Adedejiosvaldo/rag-chunker.git#main
+    restart: unless-stopped
+    environment:
+      GIN_MODE: release
+    expose: ["8080"]
+    deploy:
+      resources:
+        limits: { memory: 512m }
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:

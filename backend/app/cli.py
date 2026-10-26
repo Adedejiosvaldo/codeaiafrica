@@ -2,6 +2,8 @@
 
     python -m app.cli create-admin you@example.org "Your Name"
     python -m app.cli seed-demo        # fills an empty database with demo data for trying the app
+    python -m app.cli backup /data/backups [--keep 14]   # safe copy of the live SQLite database
+    python -m app.cli migrate          # bring the database schema up to date (run on every start)
 """
 import getpass
 import random
@@ -104,10 +106,66 @@ def seed_demo():
     print("Added 86 demo applications, 24 learners and 40 waitlist sign-ups.")
 
 
+def migrate():
+    """Apply Alembic migrations. A database made before Alembic is brought up to date, then stamped."""
+    from pathlib import Path
+    from alembic import command
+    from alembic.config import Config as AlembicConfig
+    from sqlalchemy import inspect
+
+    from .main import add_missing_columns
+
+    ini = AlembicConfig(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    ini.set_main_option("sqlalchemy.url", config.database_url)
+    db = Database(config.database_url)
+    tables = set(inspect(db.engine).get_table_names())
+    if tables and "alembic_version" not in tables:
+        db.create_all()
+        add_missing_columns(db.engine)
+        command.stamp(ini, "head")
+        print("Existing database brought up to date and stamped.")
+    else:
+        command.upgrade(ini, "head")
+        print("Database is up to date.")
+    bootstrap(db, config)
+
+
+def backup(directory, keep=14):
+    """Copy the SQLite database while the app runs (SQLite's online backup), gzip it, keep the newest `keep`."""
+    import gzip
+    import shutil
+    import sqlite3
+    from datetime import datetime
+    from pathlib import Path
+
+    url = config.database_url
+    if not url.startswith("sqlite:///"):
+        sys.exit("Backups here are for SQLite. For other databases use their own dump tool.")
+    source = url.removeprefix("sqlite:///")
+    out_dir = Path(directory)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    tmp = out_dir / f"akada-{stamp}.db"
+    with sqlite3.connect(source) as src, sqlite3.connect(tmp) as dst:
+        src.backup(dst)
+    with open(tmp, "rb") as f_in, gzip.open(f"{tmp}.gz", "wb") as f_out:
+        shutil.copyfileobj(f_in, f_out)
+    tmp.unlink()
+    backups = sorted(out_dir.glob("akada-*.db.gz"))
+    for old in backups[:-keep]:
+        old.unlink()
+    print(f"Backed up to {tmp}.gz ({len(backups[-keep:])} kept)")
+
+
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "create-admin":
         create_admin(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "")
     elif len(sys.argv) == 2 and sys.argv[1] == "seed-demo":
         seed_demo()
+    elif len(sys.argv) == 2 and sys.argv[1] == "migrate":
+        migrate()
+    elif len(sys.argv) >= 3 and sys.argv[1] == "backup":
+        keep = int(sys.argv[sys.argv.index("--keep") + 1]) if "--keep" in sys.argv else 14
+        backup(sys.argv[2], keep)
     else:
         sys.exit(__doc__)

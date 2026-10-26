@@ -66,8 +66,19 @@ def bootstrap(db, cfg):
         s.commit()
 
 
+def init_sentry(cfg):
+    if not cfg.sentry_dsn:
+        return
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=cfg.sentry_dsn, environment=cfg.env, traces_sample_rate=0.0, send_default_pii=False)
+    except ImportError:
+        print("SENTRY_DSN is set but sentry-sdk isn't installed; skipping error tracking.")
+
+
 def create_app(cfg: Config | None = None):
     cfg = cfg or default_config
+    init_sentry(cfg)
     app = FastAPI(title="Akada Labs", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.config = cfg
     app.state.db = Database(cfg.database_url)
@@ -83,7 +94,15 @@ def create_app(cfg: Config | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True}
+        """For uptime monitors: the database must answer; the chunker is reported but optional."""
+        from sqlalchemy import text
+        with app.state.db.Session() as s:
+            s.execute(text("SELECT 1"))
+        status = {"ok": True, "database": "ok"}
+        if cfg.chunker_url:
+            from .services import chunker_alive
+            status["chunker"] = "ok" if chunker_alive(cfg) else "unreachable"
+        return status
 
     dist = cfg.frontend_dist
     if dist.is_dir():
@@ -91,9 +110,14 @@ def create_app(cfg: Config | None = None):
         def spa(path: str):
             if path.startswith("api/"):
                 return JSONResponse({"detail": "Not found."}, 404)
+            root = dist.resolve()
             file = (dist / path).resolve()
-            if path and file.is_file() and dist.resolve() in file.parents:
-                return FileResponse(file)
+            if path and root in file.parents:
+                if file.is_file():
+                    return FileResponse(file)
+                # Static sites inside dist (the browser lab at /lab/) have their own index.html
+                if file.is_dir() and (file / "index.html").is_file():
+                    return FileResponse(file / "index.html")
             return FileResponse(dist / "index.html")
 
     return app
