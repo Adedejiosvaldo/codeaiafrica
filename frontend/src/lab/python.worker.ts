@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 // Runs Python (Pyodide) off the main thread, so a slow or endless loop never freezes the page.
 import { loadPyodide, type PyodideInterface } from "pyodide";
+import { AKADA_MODULE } from "./akada";
 
 const INDEX_URL = (import.meta.env.VITE_PYODIDE_URL as string | undefined) ?? "/pyodide/";
 const PACKAGES_URL = (import.meta.env.VITE_PYODIDE_PACKAGES_URL as string | undefined)
@@ -33,6 +34,7 @@ def _akada_explain(e, code):
         "AttributeError": "That value doesn't have the method or property you used.",
         "ValueError": "The value has the right type but the wrong content.",
         "ModuleNotFoundError": "That library isn't available in this lab.",
+        "AIError": "The AI call didn't work. The message says why and what to do.",
     }
     message = f"{name}: {e.msg if isinstance(e, SyntaxError) else e}"
     tip = tips.get(name) or tips.get(type(e).__mro__[1].__name__, "")
@@ -77,24 +79,27 @@ def _akada_reset():
 let py: PyodideInterface | null = null;
 
 type Request =
-  | { id: number; type: "init" }
+  | { id: number; type: "init"; apiBase?: string }
   | { id: number; type: "run"; code: string; check?: string | null; quiet?: boolean }
   | { id: number; type: "reset" };
 
 const post = (msg: unknown) => (self as DedicatedWorkerGlobalScope).postMessage(msg);
 
-async function init() {
+async function init(apiBase?: string) {
   post({ type: "detail", detail: "Downloading Python" });
   py = await loadPyodide({ indexURL: INDEX_URL, packageBaseUrl: PACKAGES_URL });
   post({ type: "detail", detail: "Starting Python" });
   py.runPython(RUNNER);
+  // The akada helper module (AI calls, embeddings, chunking through our server)
+  py.FS.writeFile("/home/pyodide/akada.py", AKADA_MODULE);
+  py.runPython(`import sys; sys.path.insert(0, "/home/pyodide")\nimport akada\nakada._BASE = ${JSON.stringify(apiBase ?? "")}`);
 }
 
 self.onmessage = async (event: MessageEvent<Request>) => {
   const req = event.data;
   try {
     if (req.type === "init") {
-      if (!py) await init();
+      if (!py) await init(req.apiBase);
       post({ id: req.id, ok: true });
     } else if (req.type === "reset") {
       py!.runPython("_akada_reset()");

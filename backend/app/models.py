@@ -138,3 +138,28 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(60))
     detail: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
+
+
+class AIUsage(Base):
+    """One call a learner made through the AI or chunker proxy."""
+    __tablename__ = "ai_usage"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"), index=True)
+    day: Mapped[str] = mapped_column(String(10), index=True)  # YYYY-MM-DD, Lagos time
+    kind: Mapped[str] = mapped_column(String(10))  # chat | embed | chunk
+    model: Mapped[str] = mapped_column(String(80), default="")
+    tokens_in: Mapped[int] = mapped_column(Integer, default=0)
+    tokens_out: Mapped[int] = mapped_column(Integer, default=0)
+    ok: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class AICache(Base):
+    """A learner's AI reply, kept for the day so identical calls (re-runs, replays) are free."""
+    __tablename__ = "ai_cache"
+    __table_args__ = (UniqueConstraint("learner_id", "key"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"))
+    key: Mapped[str] = mapped_column(String(64))
+    day: Mapped[str] = mapped_column(String(10))
+    response: Mapped[dict] = mapped_column(JSON)

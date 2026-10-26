@@ -12,7 +12,7 @@ export type EngineStatus = "loading" | "ready" | "running" | "error";
  * One Python session in a Web Worker. Stopping a run terminates the worker and starts a fresh one,
  * then replays `restore` (the learner's passed steps) so earlier variables and functions exist again.
  */
-export function usePython(restore: () => string[]) {
+export function usePython(restore: () => string[], apiBase?: string) {
   const worker = useRef<Worker | null>(null);
   const pending = useRef(new Map<number, (v: { ok: boolean; result?: RunResult; error?: string }) => void>());
   const nextId = useRef(1);
@@ -42,7 +42,7 @@ export function usePython(restore: () => string[]) {
       pending.current.delete(msg.id);
     };
     w.onerror = () => { setStatus("error"); setDetail("Python couldn't start. Check your connection and reload."); };
-    const init = await call({ type: "init" });
+    const init = await call({ type: "init", apiBase });
     if (!init.ok) { setStatus("error"); setDetail("Python couldn't start. Check your connection and reload."); return; }
     const codes = restoreRef.current();
     if (codes.length) {
@@ -51,7 +51,7 @@ export function usePython(restore: () => string[]) {
       for (const code of codes) await call({ type: "run", code, quiet: true });
     }
     setStatus("ready");
-  }, [call]);
+  }, [call, apiBase]);
 
   useEffect(() => {
     start();

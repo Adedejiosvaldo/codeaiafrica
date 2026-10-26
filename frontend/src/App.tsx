@@ -24,6 +24,7 @@ import Selection from "./pages/admin/Selection";
 import Learners from "./pages/admin/Learners";
 import Waitlist from "./pages/admin/Waitlist";
 import SettingsPage from "./pages/admin/SettingsPage";
+import AIUsage from "./pages/admin/AIUsage";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="selection" element={<Selection />} />
         <Route path="learners" element={<Learners />} />
         <Route path="waitlist" element={<Waitlist />} />
+        <Route path="ai" element={<AIUsage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

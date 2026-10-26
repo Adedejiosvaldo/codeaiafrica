@@ -8,7 +8,8 @@ from sqlalchemy import select
 from .config import Config, config as default_config
 from .db import Database
 from .models import AdminUser, Settings
-from .routers import admin, learner, public
+from .routers import admin, ai, learner, public
+from .services import make_client
 from .ratelimit import RateLimiter
 from .security import hash_password
 
@@ -84,6 +85,7 @@ def create_app(cfg: Config | None = None):
     app.state.config = cfg
     app.state.db = Database(cfg.database_url)
     app.state.limiter = RateLimiter()
+    app.state.http = make_client()
     bootstrap(app.state.db, cfg)
 
     # Compress responses: the in-browser Python download shrinks by about two thirds
@@ -91,6 +93,7 @@ def create_app(cfg: Config | None = None):
     app.add_exception_handler(RequestValidationError, friendly_errors)
     app.include_router(public.router)
     app.include_router(learner.router)
+    app.include_router(ai.router)
     app.include_router(admin.auth)
     app.include_router(admin.router)
 
@@ -103,7 +106,7 @@ def create_app(cfg: Config | None = None):
         status = {"ok": True, "database": "ok"}
         if cfg.chunker_url:
             from .services import chunker_alive
-            status["chunker"] = "ok" if chunker_alive(cfg) else "unreachable"
+            status["chunker"] = "ok" if chunker_alive(cfg, app.state.http) else "unreachable"
         return status
 
     dist = cfg.frontend_dist

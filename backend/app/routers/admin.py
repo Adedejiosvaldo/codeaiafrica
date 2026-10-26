@@ -13,7 +13,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from .. import course, scoring
-from ..models import AdminUser, Application, AuditLog, Learner, QuizAttempt, Settings, Submission, WaitlistEntry, now
+from ..models import AdminUser, AIUsage, Application, AuditLog, Learner, QuizAttempt, Settings, Submission, WaitlistEntry, now
 from ..schemas import ApplicationPatch, LoginIn, SelectionIn, SettingsIn
 from ..ratelimit import limit
 from ..security import COOKIE, audit, get_db, hash_password, make_session, require_admin, require_full_admin, verify_password
@@ -454,3 +454,29 @@ def export_waitlist(admin: AdminUser = Depends(require_admin), db: Session = Dep
     rows = [[w.email, w.name, w.created_at.isoformat()]
             for w in db.scalars(select(WaitlistEntry).order_by(WaitlistEntry.created_at))]
     return csv_response("waitlist.csv", ["email", "name", "joined"], rows, db, admin)
+
+
+# --------------------------------------------------------------------------- AI usage
+
+@router.get("/ai-usage")
+def ai_usage(request: Request, admin: AdminUser = Depends(require_admin), db: Session = Depends(get_db)):
+    from .ai import today
+    cfg = request.app.state.config
+    day = today()
+    rows = db.execute(select(AIUsage.day, func.count(AIUsage.id), func.sum(AIUsage.tokens_in), func.sum(AIUsage.tokens_out))
+                      .where(AIUsage.kind.in_(("chat", "embed"))).group_by(AIUsage.day).order_by(AIUsage.day.desc()).limit(14)).all()
+    per_day = [{"day": d, "calls": n, "tokens": (ti or 0) + (to or 0)} for d, n, ti, to in reversed(rows)]
+    learners = db.execute(select(Learner.name, func.count(AIUsage.id)).join(AIUsage, AIUsage.learner_id == Learner.id)
+                          .where(AIUsage.day == day, AIUsage.kind.in_(("chat", "embed")))
+                          .group_by(Learner.id).order_by(func.count(AIUsage.id).desc()).limit(50)).all()
+    errors = db.scalar(select(func.count(AIUsage.id)).where(AIUsage.day == day, AIUsage.ok.is_(False))) or 0
+    chunks = db.scalar(select(func.count(AIUsage.id)).where(AIUsage.day == day, AIUsage.kind == "chunk")) or 0
+    today_row = next((r for r in per_day if r["day"] == day), {"calls": 0, "tokens": 0})
+    return {
+        "today": {"day": day, "calls": today_row["calls"], "tokens": today_row["tokens"], "errors": errors, "chunks": chunks},
+        "limits": {"per_learner": cfg.ai_daily_limit, "budget": cfg.ai_daily_budget, "max_tokens": cfg.ai_max_tokens},
+        "configured": {"chat": bool(cfg.ai_api_key), "embeddings": bool(cfg.embed_base_url and cfg.embed_model),
+                       "chunker": bool(cfg.chunker_url)},
+        "models": cfg.ai_models, "per_day": per_day,
+        "learners": [{"name": n, "calls": c} for n, c in learners],
+    }
