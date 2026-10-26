@@ -59,12 +59,16 @@ def schedule(start_date, today=None):
 def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get_db)):
     s = db.scalar(select(Settings))
     done = {sub.week: sub for sub in learner.submissions}
+    reflections = {r.week: r for r in learner.reflections}
     weeks = []
     for w in course.WEEKS:
         sub = done.get(w["week"])
         weeks.append({**w, "done": sub is not None, "value": sub.value if sub else None,
                       "submitted_at": sub.created_at if sub else None, "interactive": w["week"] in labs.LABS,
-                      "lab_submits": w["week"] in labs.LABS and labs.LABS[w["week"]]["completes_week"]})
+                      "lab_submits": w["week"] in labs.LABS and labs.LABS[w["week"]]["completes_week"],
+                      "reflection": ({"text": reflections[w["week"]].text, "feedback": reflections[w["week"]].feedback,
+                                      "feedback_by": reflections[w["week"]].feedback_by, "feedback_at": reflections[w["week"]].feedback_at}
+                                     if w["week"] in reflections else None)})
     return {
         "name": learner.name,
         "first_name": learner.name.split()[0],
@@ -77,6 +81,11 @@ def dashboard(learner: Learner = Depends(get_learner), db: Session = Depends(get
         "quiz": quiz_state(learner, s),
         "start_date": s.start_date,
         "session_link": s.session_link,
+        "attended": sorted(a.week for a in learner.attendance),
+        "capstone": ({"brief": learner.capstone.brief, "title": learner.capstone.title,
+                      "description": learner.capstone.description, "public": learner.capstone.public}
+                     if learner.capstone else None),
+        "certificate": {"eligible": len(done) >= s.labs_required, "open": s.certificates_open},
         "session_time": s.session_time,
         "announcements": [{"id": a.id, "title": a.title, "body": a.body, "author": a.author, "created_at": a.created_at}
                           for a in db.scalars(select(Announcement).order_by(Announcement.created_at.desc()).limit(5))],

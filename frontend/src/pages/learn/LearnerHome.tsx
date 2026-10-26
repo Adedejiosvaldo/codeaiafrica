@@ -82,8 +82,10 @@ export default function LearnerHome() {
         <Stat icon={<Flame className="h-5 w-5" />} tone="clay" label="Week streak" value={runStreak} unit={runStreak === 1 ? "week" : "weeks"} />
         <Stat icon={<ClipboardList className="h-5 w-5" />} tone="brand" label="Knowledge check"
           value={data.quiz.post.score ?? data.quiz.pre.score ?? "—"} unit={data.quiz.pre.done ? "%" : ""} />
-        <Stat icon={<Award className="h-5 w-5" />} tone="sun" label="Labs to certificate"
-          value={left === 0 ? "Earned" : left} unit={left === 0 ? "" : "to go"} />
+        <Link to={`${base}/certificate`} className="rounded-2xl focus-visible:outline-2">
+          <Stat icon={<Award className="h-5 w-5" />} tone="sun" label="Labs to certificate"
+            value={left === 0 ? "Earned" : left} unit={left === 0 ? "" : "to go"} />
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
@@ -101,6 +103,7 @@ export default function LearnerHome() {
                 <p className="text-sm font-medium text-ink-soft">Next live session</p>
                 <p className="mt-1 text-lg font-bold">{data.next_session ? prettyDate(data.next_session, { weekday: "long", day: "numeric", month: "long" }) : "No more sessions"}</p>
                 {data.next_session_week && <p className="text-sm text-ink-soft">Week {data.next_session_week}{data.session_time ? `, ${data.session_time}` : ""}, 60 minutes, online</p>}
+                {data.attended.length > 0 && <p className="mt-1 text-xs text-ink-faint">You've attended {data.attended.length} session{data.attended.length === 1 ? "" : "s"}</p>}
               </div>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><CalendarDays className="h-5 w-5" aria-hidden /></span>
             </div>

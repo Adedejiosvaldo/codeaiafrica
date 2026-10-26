@@ -1,7 +1,8 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Award, CalendarDays, CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Laptop, Lock, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, ChevronRight, Circle, Clock, ExternalLink, Laptop, Lock, Play } from "lucide-react";
 import { useLearner } from "../../components/LearnerLayout";
 import { STATUS_LABEL, SubmitForm } from "../../components/learner-widgets";
+import { CapstoneCard, ReflectionCard } from "../../components/week-extras";
 import { AButton, Badge, Card, LinkButton } from "../../components/ui";
 import { formatDate } from "../../lib/labels";
 import { hours, prettyDate, weekStatus } from "../../lib/learner";
@@ -85,10 +86,8 @@ export default function WeekPage() {
               ))}
             </ol>
           </Card>
-          {week.week === 9 && (
-            <Card className="flex gap-4 p-5"><Award className="h-6 w-6 shrink-0 text-sun-500" aria-hidden />
-              <p className="text-ink-soft"><b className="text-ink">Capstone week.</b> Pick a brief (or your own idea) and post it in the cohort WhatsApp group by Saturday.</p></Card>
-          )}
+          {week.week === 9 && <CapstoneCard data={data} token={token} onSaved={reload} />}
+          {week.week !== 12 && <ReflectionCard key={week.week} week={week} token={token} onSaved={reload} />}
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">

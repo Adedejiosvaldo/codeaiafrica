@@ -77,7 +77,8 @@ export default function Learners() {
                     <tr key={l.id} className="hover:bg-paper/60">
                       <td className="sticky left-0 bg-card px-5 py-3">
                         <p className="font-semibold">{l.name}</p>
-                        <p className="text-xs text-ink-soft">Last active {formatDate(l.last_activity)}</p>
+                        <p className="text-xs text-ink-soft">Last active {formatDate(l.last_activity)} · {l.attended} session{l.attended === 1 ? "" : "s"}</p>
+                        {l.capstone && <p className="max-w-[220px] truncate text-xs text-brand-700" title={l.capstone}>{l.capstone}</p>}
                       </td>
                       {data.weeks.map((w) => (
                         <td key={w.week} className="px-0 py-3 text-center">

@@ -69,6 +69,8 @@ export default function SettingsPage() {
             <h2 className="text-lg font-bold">Course</h2>
             <Toggle label="Final quiz is open" hint="Turn on in week 12 so learners can take the end-of-course quiz."
               checked={form.post_quiz_open} onChange={(v) => set("post_quiz_open", v)} />
+            <Toggle label="Certificates are available" hint="Turn on at demo day. Learners who've done enough labs can then print their certificate."
+              checked={form.certificates_open} onChange={(v) => set("certificates_open", v)} />
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="First live session (week 1)" htmlFor="start_date" hint="Learners see the current week and next session from this.">
                 <TextInput id="start_date" type="date" value={form.start_date} onChange={(e) => set("start_date", e.target.value)} />

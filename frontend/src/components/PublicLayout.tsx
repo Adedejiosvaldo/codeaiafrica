@@ -94,7 +94,7 @@ export default function PublicLayout() {
             </p>
           </div>
           {[
-            { title: "Course", links: [["/#path", "Curriculum"], ["/#how", "How it works"], ["/#projects", "Capstone projects"]] },
+            { title: "Course", links: [["/#path", "Curriculum"], ["/showcase", "Project showcase"], ["/demo-day", "Demo day"], ["/verify", "Check a certificate"]] },
             { title: "Get started", links: [["/try", "Train your first AI"], ["/apply", "Apply"], ["/find-my-link", "Find my link"]] },
             { title: "About", links: [["/privacy", "Privacy notice"], ["/admin", "Team sign in"]] },
           ].map((col) => (

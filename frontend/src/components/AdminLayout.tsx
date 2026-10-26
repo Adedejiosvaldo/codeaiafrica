@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { ClipboardCheck, Cpu, ExternalLink, Mail, LayoutDashboard, ListChecks, LogOut, Settings, Users, UserPlus } from "lucide-react";
+import { CalendarCheck, ClipboardCheck, Cpu, ExternalLink, Mail, MessageSquareText, Rocket, LayoutDashboard, ListChecks, LogOut, Settings, Users, UserPlus } from "lucide-react";
 import { api } from "../lib/api";
 import { useApi } from "../lib/useApi";
 import type { AdminMe } from "../lib/types";
@@ -15,8 +15,11 @@ const NAV = [
   { to: "/admin/applications", label: "Applications", icon: ClipboardCheck },
   { to: "/admin/selection", label: "Selection", icon: ListChecks },
   { to: "/admin/learners", label: "Learners", icon: Users },
+  { to: "/admin/feedback", label: "Feedback", icon: MessageSquareText },
+  { to: "/admin/attendance", label: "Attendance", icon: CalendarCheck },
   { to: "/admin/waitlist", label: "Waitlist", icon: UserPlus },
   { to: "/admin/messages", label: "Messages", icon: Mail },
+  { to: "/admin/demo-day", label: "Demo day", icon: Rocket },
   { to: "/admin/ai", label: "AI usage", icon: Cpu },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];

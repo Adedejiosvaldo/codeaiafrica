@@ -100,6 +100,7 @@ class SettingsIn(BaseModel):
     contact_email: str = Field("", max_length=254)
     session_link: str = Field("", max_length=500)
     session_time: str = Field("", max_length=40)
+    certificates_open: bool = False
 
 
 class SelectionIn(BaseModel):

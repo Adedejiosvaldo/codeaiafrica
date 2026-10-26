@@ -40,6 +40,8 @@ class Settings(Base):
     # Live sessions: the video call link and the usual time, shown to learners
     session_link: Mapped[str] = mapped_column(String(500), default="")
     session_time: Mapped[str] = mapped_column(String(40), default="10:00 WAT")
+    # Learners who've done enough labs can see and print their certificate once this is on
+    certificates_open: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class WaitlistEntry(Base):
@@ -89,11 +91,19 @@ class Learner(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True)
     token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    # Set the first time the certificate is issued; anyone can verify it at /verify/<code>
+    certificate_code: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
+    certificate_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     application: Mapped[Application] = relationship(back_populates="learner")
     submissions: Mapped[list["Submission"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
     quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
     lab_steps: Mapped[list["LabStep"]] = relationship(back_populates="learner", cascade="all, delete-orphan")
+    reflections: Mapped[list["Reflection"]] = relationship(cascade="all, delete-orphan")
+    capstone: Mapped["Capstone | None"] = relationship(cascade="all, delete-orphan")
+    attendance: Mapped[list["Attendance"]] = relationship(cascade="all, delete-orphan")
+    ai_usage: Mapped[list["AIUsage"]] = relationship(cascade="all, delete-orphan")
+    ai_cache: Mapped[list["AICache"]] = relationship(cascade="all, delete-orphan")
 
 
 class Submission(Base):
@@ -177,4 +187,49 @@ class Announcement(Base):
     title: Mapped[str] = mapped_column(String(160))
     body: Mapped[str] = mapped_column(Text)
     author: Mapped[str] = mapped_column(String(254))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class Reflection(Base):
+    """A learner's short written reflection for a week, and a TA's reply."""
+    __tablename__ = "reflections"
+    __table_args__ = (UniqueConstraint("learner_id", "week"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"))
+    week: Mapped[int] = mapped_column(Integer)
+    text: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    feedback: Mapped[str] = mapped_column(Text, default="")
+    feedback_by: Mapped[str] = mapped_column(String(120), default="")
+    feedback_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Capstone(Base):
+    """The project a learner chose in week 9."""
+    __tablename__ = "capstones"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"), unique=True)
+    brief: Mapped[str] = mapped_column(String(30))  # one of the briefs, or "own"
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(Text)
+    public: Mapped[bool] = mapped_column(Boolean, default=False)  # opted in to the public showcase
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class Attendance(Base):
+    """A learner attended the live session in a given week."""
+    __tablename__ = "attendance"
+    __table_args__ = (UniqueConstraint("learner_id", "week"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    learner_id: Mapped[int] = mapped_column(ForeignKey("learners.id", ondelete="CASCADE"))
+    week: Mapped[int] = mapped_column(Integer)
+
+
+class DemoRegistration(Base):
+    """Someone from the public registered to watch demo day."""
+    __tablename__ = "demo_registrations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    email: Mapped[str] = mapped_column(String(254), unique=True)
+    organisation: Mapped[str] = mapped_column(String(160), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

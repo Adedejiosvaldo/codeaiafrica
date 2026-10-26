@@ -37,9 +37,9 @@ export default function LearnerLayout() {
   ];
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[264px_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[264px_1fr] print:block">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-card px-3 py-5 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-card px-3 py-5 lg:flex print:hidden">
         <Link to={base} className="px-3"><Logo /></Link>
         <p className="mt-1 px-3 text-xs font-medium text-ink-faint">{data.cohort_name}</p>
         <nav className="mt-7 space-y-0.5">
@@ -68,19 +68,19 @@ export default function LearnerLayout() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-card/90 px-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-card/90 px-4 backdrop-blur lg:hidden print:hidden">
         <Link to={base}><Logo /></Link>
         <span className="grid h-8 w-8 place-items-center rounded-full bg-sun-100 text-xs font-bold text-[#7a5300]" aria-label={data.name}>{initials(data.name)}</span>
       </header>
 
-      <main className="min-w-0 px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-9">
+      <main className="min-w-0 px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-9 print:p-0">
         <div className="mx-auto max-w-5xl">
           <Outlet context={{ data, token, reload } satisfies LearnerContext} />
         </div>
       </main>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Learner">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden print:hidden" aria-label="Learner">
         <div className="grid grid-cols-3">
           {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={({ isActive }) => cx(

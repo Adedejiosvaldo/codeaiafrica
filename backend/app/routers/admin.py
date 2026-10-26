@@ -339,13 +339,14 @@ def learner_out(l, s):
             "whatsapp": l.application.whatsapp if l.application else "",
             "weeks_done": weeks, "labs_done": len(weeks), "labs_required": s.labs_required,
             "pre_score": quiz.get("pre"), "post_score": quiz.get("post"),
+            "capstone": l.capstone.title if l.capstone else None, "attended": len(l.attendance),
             "last_activity": max((sub.created_at for sub in l.submissions), default=None)}
 
 
 def all_learners(db):
     return db.scalars(select(Learner).order_by(Learner.name).options(
         selectinload(Learner.submissions), selectinload(Learner.quiz_attempts),
-        selectinload(Learner.application))).all()
+        selectinload(Learner.application), selectinload(Learner.capstone), selectinload(Learner.attendance))).all()
 
 
 @router.get("/learners")

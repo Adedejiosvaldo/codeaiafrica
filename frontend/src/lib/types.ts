@@ -29,6 +29,7 @@ export interface LearnerWeek extends Week {
   interactive: boolean;
   /** Passing every step of the interactive lab submits the week (false for week 6, which has a part 2) */
   lab_submits: boolean;
+  reflection: { text: string; feedback: string; feedback_by: string; feedback_at: string | null } | null;
   value: string | null;
   submitted_at: string | null;
 }
@@ -57,6 +58,9 @@ export interface LearnerDashboard {
   activity: string[];
   session_link: string;
   session_time: string;
+  attended: number[];
+  capstone: { brief: string; title: string; description: string; public: boolean } | null;
+  certificate: { eligible: boolean; open: boolean };
   announcements: { id: number; title: string; body: string; author: string; created_at: string }[];
 }
 
@@ -140,6 +144,8 @@ export interface LearnerRow {
   weeks_done: number[];
   labs_done: number;
   labs_required: number;
+  capstone: string | null;
+  attended: number;
   pre_score: number | null;
   post_score: number | null;
   last_activity: string | null;
@@ -158,6 +164,7 @@ export interface SettingsData {
   contact_email: string;
   session_link: string;
   session_time: string;
+  certificates_open: boolean;
 }
 
 export type AdminMe = { email: string; name: string; role: "admin" | "ta" };

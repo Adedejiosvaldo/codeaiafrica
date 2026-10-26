@@ -8,7 +8,7 @@ from sqlalchemy import select
 from .config import Config, config as default_config
 from .db import Database
 from .models import AdminUser, Settings
-from .routers import admin, ai, learner, messages, public
+from .routers import admin, ai, community, learner, messages, public
 from .services import make_client
 from .mailer import SMTPMailer
 from .ratelimit import RateLimiter
@@ -98,6 +98,9 @@ def create_app(cfg: Config | None = None):
     app.include_router(ai.router)
     app.include_router(messages.router)
     app.include_router(messages.public)
+    app.include_router(community.learner_router)
+    app.include_router(community.public)
+    app.include_router(community.admin_router)
     app.include_router(admin.auth)
     app.include_router(admin.router)
 
